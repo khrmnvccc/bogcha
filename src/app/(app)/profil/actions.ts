@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { authorize, isUser, dbErrorMessage, fieldErrors, type ActionState } from "@/lib/actions";
 import { zPhone, zOptPhone, zOptText } from "@/lib/validation";
+import { telegramBotUsername, telegramConfigured } from "@/lib/integrations/telegram";
 
 export async function updateMyContact(_p: ActionState, fd: FormData): Promise<ActionState> {
   const user = await authorize(null);
@@ -25,4 +26,26 @@ export async function markAllRead(): Promise<ActionState> {
   if (error) return { ok: false, message: dbErrorMessage(error) };
   revalidatePath("/", "layout");
   return { ok: true, message: "Barchasi o'qilgan deb belgilandi" };
+}
+
+export async function createTelegramLink(): Promise<ActionState> {
+  const user = await authorize(null);
+  if (!isUser(user)) return user;
+  if (!telegramConfigured()) return { ok: false, message: "Telegram bot hali sozlanmagan" };
+  const username = await telegramBotUsername();
+  if (!username) return { ok: false, message: "Telegram botga ulanib bo'lmadi. Keyinroq urinib ko'ring." };
+  const supabase = await createClient();
+  const { data: code, error } = await supabase.rpc("create_telegram_link_code");
+  if (error || !code) return { ok: false, message: dbErrorMessage(error) };
+  return { ok: true, data: { url: `https://t.me/${username}?start=${code}` } };
+}
+
+export async function unlinkTelegram(): Promise<ActionState> {
+  const user = await authorize(null);
+  if (!isUser(user)) return user;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("unlink_my_telegram");
+  if (error) return { ok: false, message: dbErrorMessage(error) };
+  revalidatePath("/profil");
+  return { ok: true, message: "Telegram uzildi" };
 }

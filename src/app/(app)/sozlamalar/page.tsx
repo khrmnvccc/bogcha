@@ -11,16 +11,20 @@ import { ConfirmAction } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { SettingsForm, PeriodDialog } from "./forms";
 import { setCurrentPeriod } from "./actions";
+import { ConnectBotButton } from "./telegram-connect";
+import { telegramBotUsername } from "@/lib/integrations/telegram";
 
 export const metadata: Metadata = { title: "Sozlamalar" };
 
 export default async function SettingsPage() {
   await requireUser(ADMIN_ROLES);
   const supabase = await createClient();
-  const [settings, { data: periods }, { count: pending }] = await Promise.all([
+  const [settings, { data: periods }, { count: pending }, { count: linked }, botUsername] = await Promise.all([
     getSettings(supabase),
     supabase.from("academic_periods").select("*").order("start_date", { ascending: false }),
     supabase.from("outbound_messages").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).not("telegram_chat_id", "is", null),
+    telegramBotUsername(),
   ]);
   const integrations = integrationStatus();
   return (
@@ -52,6 +56,14 @@ export default async function SettingsPage() {
                 {i.configured ? <Badge tone="green">Sozlangan</Badge> : <Badge>Sozlanmagan</Badge>}
               </div>
             ))}
+            {integrations.find((i) => i.key === "telegram")?.configured && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+                <p className="text-xs text-slate-600">
+                  {botUsername ? <>Bot: <b>@{botUsername}</b> · </> : null}Telegram ulagan foydalanuvchilar: <b>{linked ?? 0}</b>
+                </p>
+                <ConnectBotButton />
+              </div>
+            )}
             <p className="pt-2 text-xs text-slate-500">Navbatda yuborilmagan xabarlar: {pending ?? 0}. Sozlanmagan kanal uchun xabarlar yuborilmaydi va &quot;yuborildi&quot; deb ko&apos;rsatilmaydi.</p>
           </CardBody>
         </Card>

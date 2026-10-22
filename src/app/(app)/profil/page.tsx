@@ -6,6 +6,8 @@ import { PageHeader, InfoRow } from "@/components/ui/misc";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { PasswordForm } from "@/components/password-form";
 import { ContactForm } from "./contact-form";
+import { TelegramConnect } from "./telegram-card";
+import { telegramConfigured } from "@/lib/integrations/telegram";
 
 export const metadata: Metadata = { title: "Profil" };
 
@@ -33,6 +35,10 @@ export default async function ProfilePage() {
       <Card>
         <CardHeader title="Aloqa ma'lumotlari" description={isParent ? "Bog'cha siz bilan shu raqamlar orqali bog'lanadi" : undefined} />
         <CardBody><ContactForm isParent={isParent} v={g ?? { phone: user.profile.phone }} /></CardBody>
+      </Card>
+      <Card id="telegram">
+        <CardHeader title="Telegram xabarnomalari" />
+        <CardBody><TelegramConnect linkedAt={user.profile.telegram_linked_at} configured={telegramConfigured()} /></CardBody>
       </Card>
       <Card id="parol">
         <CardHeader title="Parolni almashtirish" />

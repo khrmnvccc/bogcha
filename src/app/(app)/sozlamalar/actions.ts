@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { authorize, isUser, dbErrorMessage, fieldErrors, type ActionState } from "@/lib/actions";
 import { ADMIN_ROLES } from "@/lib/auth";
+import { env } from "@/lib/env";
+import { registerTelegramWebhook, telegramBotUsername, telegramConfigured } from "@/lib/integrations/telegram";
 import { zText, zOptText, zOptPhone, zMoney, zTime, zDate, zUuid } from "@/lib/validation";
 
 const int = (label: string, min: number, max: number) =>
@@ -72,4 +74,17 @@ export async function setCurrentPeriod(_p: ActionState, fd: FormData): Promise<A
   if (error) return { ok: false, message: dbErrorMessage(error) };
   revalidatePath("/sozlamalar");
   return { ok: true, message: "Joriy o'quv davri o'zgartirildi" };
+}
+
+export async function connectTelegramBot(): Promise<ActionState> {
+  const user = await authorize(ADMIN_ROLES);
+  if (!isUser(user)) return user;
+  if (!telegramConfigured()) return { ok: false, message: "TELEGRAM_BOT_TOKEN sozlanmagan" };
+  try {
+    await registerTelegramWebhook(env.appUrl());
+  } catch (e) {
+    return { ok: false, message: `Botni ulab bo'lmadi: ${(e as Error).message}` };
+  }
+  const username = await telegramBotUsername();
+  return { ok: true, message: `Bot ulandi${username ? ` (@${username})` : ""}. Foydalanuvchilar endi Profil sahifasidan Telegram'ni ulay oladi.` };
 }

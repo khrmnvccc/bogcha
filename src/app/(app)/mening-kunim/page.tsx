@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TelegramPrompt } from "@/components/telegram-prompt";
 import Link from "next/link";
 import { CalendarCheck, ChevronRight, Megaphone, Cake } from "lucide-react";
 import { requireUser, STAFF_ROLES } from "@/lib/auth";
@@ -41,6 +42,7 @@ export default async function MyDayPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={`Assalomu alaykum, ${user.profile.full_name.split(" ")[1] ?? user.profile.full_name}!`} description={`${weekdayName(today)}, ${formatDateLong(today)}`} />
+      <TelegramPrompt linkedAt={user.profile.telegram_linked_at} />
       {user.employeeId ? (
         <CheckWidget record={rec} schedule={schedule} checkIn={checkIn} checkOut={checkOut}
           locationEnabled={settings.location_lat != null && settings.location_lng != null} />

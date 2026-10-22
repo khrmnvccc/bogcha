@@ -15,6 +15,7 @@ export type Profile = {
   permissions: string[];
   is_active: boolean;
   must_change_password: boolean;
+  telegram_linked_at: string | null;
 };
 
 export type CurrentUser = {
@@ -40,7 +41,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const [{ data: profile }, { data: employee }, { data: guardian }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, role, full_name, username, phone, permissions, is_active, must_change_password")
+      .select("id, role, full_name, username, phone, permissions, is_active, must_change_password, telegram_linked_at")
       .eq("id", userId)
       .maybeSingle(),
     supabase.from("employees").select("id").eq("profile_id", userId).maybeSingle(),

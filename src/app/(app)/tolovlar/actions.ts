@@ -125,35 +125,55 @@ export async function updateInvoiceBase(_p: ActionState, fd: FormData): Promise<
   return { ok: true, message: "Asosiy summa yangilandi" };
 }
 
-/** Queues a debt reminder for each family with overdue invoices (Telegram if chat ID known, else SMS). */
+/**
+ * Sends a debt reminder to every family with overdue invoices: an in-app
+ * notification for each guardian account (which also goes to Telegram when
+ * linked), plus an SMS to the primary guardian who has no Telegram, if SMS is set up.
+ */
 export async function sendDebtReminders(): Promise<ActionState> {
   const user = await authorize(FINANCE_ROLES);
   if (!isUser(user)) return user;
-  if (!anyChannelConfigured()) {
-    return { ok: false, message: "Telegram yoki SMS sozlanmagan. Avval Sozlamalar > Integratsiyalar bo'limini ko'ring." };
-  }
   const supabase = await createClient();
   const { data } = await supabase.from("invoices")
-    .select("balance, children!inner(id, full_name, child_guardians(is_primary, guardians(phone, telegram_chat_id)))")
+    .select("balance, children!inner(id, full_name, child_guardians(is_primary, guardians(phone, telegram_chat_id, profile_id, profiles(telegram_chat_id, is_active))))")
     .gt("balance", 0).lt("due_date", todayISO());
-  type R = { balance: number; children: { id: string; full_name: string; child_guardians: { is_primary: boolean; guardians: { phone: string; telegram_chat_id: string | null } | null }[] } };
-  const byChild = new Map<string, { name: string; debt: number; phone?: string; chat?: string | null }>();
+  type G = { phone: string; telegram_chat_id: string | null; profile_id: string | null; profiles: { telegram_chat_id: string | null; is_active: boolean } | null };
+  type R = { balance: number; children: { id: string; full_name: string; child_guardians: { is_primary: boolean; guardians: G | null }[] } };
+  const byChild = new Map<string, { name: string; debt: number; guardians: { primary: boolean; g: G }[] }>();
   for (const r of (data ?? []) as unknown as R[]) {
-    const g = (r.children.child_guardians.find((x) => x.is_primary) ?? r.children.child_guardians[0])?.guardians;
-    const e = byChild.get(r.children.id) ?? { name: r.children.full_name, debt: 0, phone: g?.phone, chat: g?.telegram_chat_id };
+    const e = byChild.get(r.children.id) ?? {
+      name: r.children.full_name, debt: 0,
+      guardians: r.children.child_guardians.filter((x) => x.guardians).map((x) => ({ primary: x.is_primary, g: x.guardians as G })),
+    };
     e.debt += Number(r.balance);
     byChild.set(r.children.id, e);
   }
   const { data: s } = await supabase.from("settings").select("kindergarten_name, phone").eq("id", 1).single();
-  const rows = [...byChild.entries()].flatMap(([id, e]) => {
-    const body = `${s?.kindergarten_name ?? "Bog'cha"}: ${e.name} uchun to'lov muddati o'tgan. Qarz: ${formatSom(e.debt)}.${s?.phone ? ` Tel: ${s.phone}` : ""}`;
-    if (e.chat && process.env.TELEGRAM_BOT_TOKEN) return [{ channel: "telegram", recipient: e.chat, body, related_entity: "debt_reminder", related_id: id }];
-    if (e.phone && smsConfigured()) return [{ channel: "sms", recipient: e.phone, body, related_entity: "debt_reminder", related_id: id }];
-    return [];
-  });
-  if (!rows.length) return { ok: false, message: "Eslatma yuboriladigan qarzdor topilmadi (yoki aloqa kanali yo'q)" };
-  const { error } = await createAdminClient().from("outbound_messages").insert(rows);
-  if (error) return { ok: false, message: dbErrorMessage(error) };
-  after(() => dispatchPending(200).then(() => undefined));
-  return { ok: true, message: `${rows.length} ta eslatma yuborish navbatiga qo'yildi` };
+  const notifications: { user_id: string; kind: string; title: string; body: string; link: string }[] = [];
+  const sms: { channel: string; recipient: string; body: string; related_entity: string; related_id: string }[] = [];
+  for (const [id, e] of byChild) {
+    const body = `${e.name} uchun to'lov muddati o'tgan. Qarzdorlik: ${formatSom(e.debt)}. To'lovni bog'cha kassasida amalga oshirishingiz mumkin.${s?.phone ? ` Tel: ${s.phone}` : ""}`;
+    for (const { g } of e.guardians) {
+      if (g.profile_id && g.profiles?.is_active) {
+        notifications.push({ user_id: g.profile_id, kind: "reminder", title: "⚠️ To'lov eslatmasi", body, link: "/ota-ona/tolovlar" });
+      }
+    }
+    const primary = (e.guardians.find((x) => x.primary) ?? e.guardians[0])?.g;
+    const hasTelegram = e.guardians.some(({ g }) => g.telegram_chat_id || g.profiles?.telegram_chat_id);
+    if (primary?.phone && !hasTelegram && smsConfigured()) {
+      sms.push({ channel: "sms", recipient: primary.phone, body: `${s?.kindergarten_name ?? "Bog'cha"}: ${body}`, related_entity: "debt_reminder", related_id: id });
+    }
+  }
+  if (!notifications.length && !sms.length) return { ok: false, message: "Eslatma yuboriladigan qarzdor topilmadi (yoki ota-onaning hisobi yo'q)" };
+  const admin = createAdminClient();
+  if (notifications.length) {
+    const { error } = await admin.from("notifications").insert(notifications);
+    if (error) return { ok: false, message: dbErrorMessage(error) };
+  }
+  if (sms.length) {
+    const { error } = await admin.from("outbound_messages").insert(sms);
+    if (error) return { ok: false, message: dbErrorMessage(error) };
+  }
+  if (anyChannelConfigured()) after(() => dispatchPending(200).then(() => undefined));
+  return { ok: true, message: `${byChild.size} ta oilaga eslatma yuborildi` };
 }

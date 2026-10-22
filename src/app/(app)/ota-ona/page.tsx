@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TelegramPrompt } from "@/components/telegram-prompt";
 import Link from "next/link";
 import { CalendarCheck, Wallet, Megaphone, Phone, ChevronRight } from "lucide-react";
 import { requireUser } from "@/lib/auth";
@@ -31,6 +32,7 @@ export default async function ParentHome() {
   return (
     <div className="space-y-6">
       <PageHeader title={`Assalomu alaykum, ${user.profile.full_name.split(" ")[1] ?? user.profile.full_name}!`} description={formatDateLong(today)} />
+      <TelegramPrompt linkedAt={user.profile.telegram_linked_at} />
       {kids.length === 0 ? (
         <Card><EmptyState title="Hisobingizga hali bola bog'lanmagan" description="Bog'cha administratoriga murojaat qiling." /></Card>
       ) : (
