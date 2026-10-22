@@ -76,6 +76,7 @@ function Brand({ orgName }: { orgName: string }) {
 
 export function AppShell({ nav, user, orgName, unread, signOut, children }: ShellProps) {
   const [open, setOpen] = React.useState(false);
+  const [signingOut, startSignOut] = React.useTransition();
   return (
     <div className="min-h-dvh">
       {/* Desktop sidebar */}
@@ -149,12 +150,13 @@ export function AppShell({ nav, user, orgName, unread, signOut, children }: Shel
                   </Link>
                 </M.Item>
                 <M.Separator className="my-1 h-px bg-slate-100" />
-                <M.Item asChild>
-                  <form action={signOut}>
-                    <button type="submit" className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 outline-none data-[highlighted]:bg-red-50">
-                      <LogOut className="h-4 w-4" /> Chiqish
-                    </button>
-                  </form>
+                {/* The menu unmounts on select, so a <form> inside it never submits; call the action directly. */}
+                <M.Item
+                  disabled={signingOut}
+                  onSelect={() => startSignOut(() => signOut())}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 outline-none data-[highlighted]:bg-red-50 data-[disabled]:opacity-50"
+                >
+                  <LogOut className="h-4 w-4" /> {signingOut ? "Chiqilmoqda..." : "Chiqish"}
                 </M.Item>
               </M.Content>
             </M.Portal>
