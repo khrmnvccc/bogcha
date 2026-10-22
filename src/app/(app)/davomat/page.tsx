@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { requireUser, hasPermission } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { formatDateLong, todayISO, weekdayName } from "@/lib/format";
+import { todayISO } from "@/lib/format";
+import { ScanFace } from "lucide-react";
+import { LinkButton } from "@/components/ui/button";
 import { sp } from "@/lib/utils";
 import { PageHeader, EmptyState, Notice } from "@/components/ui/misc";
 import { Card } from "@/components/ui/card";
@@ -36,22 +38,23 @@ export default async function DailyAttendancePage({ searchParams }: { searchPara
   const canCorrect = !isTeacher || hasPermission(user, "attendance.correct");
   const editable = !isPast || canCorrect;
 
-  let children: { id: string; full_name: string; status?: "present" | "absent" | "late" | "excused"; note?: string | null; photo?: string | null; parentNote?: string | null }[] = [];
+  let children: { id: string; full_name: string; status?: "present" | "absent" | "late" | "excused"; note?: string | null; photo?: string | null; parentNote?: string | null; arrivedAt?: string | null; leftAt?: string | null }[] = [];
   if (groupId) {
     const { data: kids } = await supabase.from("children").select("id, full_name, photo_updated_at").eq("group_id", groupId).eq("status", "active").lte("enrollment_date", date).order("full_name");
     const ids = (kids ?? []).map((k) => k.id);
     const [{ data: recs }, { data: reports }] = ids.length ? await Promise.all([
-      supabase.from("child_attendance").select("child_id, status, note").eq("date", date).in("child_id", ids),
+      supabase.from("child_attendance").select("child_id, status, note, arrived_at, left_at").eq("date", date).in("child_id", ids),
       supabase.from("absence_reports").select("child_id, note").eq("date", date).in("child_id", ids),
     ]) : [{ data: [] }, { data: [] }];
     const m = new Map((recs ?? []).map((r) => [r.child_id as string, r]));
     const rep = new Map((reports ?? []).map((r) => [r.child_id as string, (r.note as string | null) ?? ""]));
-    children = (kids ?? []).map((k) => ({ id: k.id, full_name: k.full_name, status: m.get(k.id)?.status, note: m.get(k.id)?.note, photo: k.photo_updated_at, parentNote: rep.get(k.id) }));
+    children = (kids ?? []).map((k) => ({ id: k.id, full_name: k.full_name, status: m.get(k.id)?.status, note: m.get(k.id)?.note, photo: k.photo_updated_at, parentNote: rep.get(k.id), arrivedAt: m.get(k.id)?.arrived_at, leftAt: m.get(k.id)?.left_at }));
   }
 
   return (
     <div>
-      <PageHeader title={t("Bolalar davomati")} description={`${f.weekdayName(date)}, ${f.formatDateLong(date)}`} />
+      <PageHeader title={t("Bolalar davomati")} description={`${f.weekdayName(date)}, ${f.formatDateLong(date)}`}
+        actions={date === today && groupId ? <LinkButton href={`/davomat/yuz?guruh=${groupId}`}><ScanFace className="h-4 w-4" />{" "}{t("Yuz orqali belgilash")}</LinkButton> : undefined} />
       <Card>
         <div className="border-b border-slate-100 p-4">
           <FilterBar filters={[

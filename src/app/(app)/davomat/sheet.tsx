@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 import { saveChildAttendance } from "./actions";
 import { useI18n } from "@/lib/i18n/client";
 import { Avatar } from "@/components/avatar";
+import { formatTime } from "@/lib/format";
 
 type Status = "present" | "absent" | "late" | "excused";
-type Child = { id: string; full_name: string; status?: Status; note?: string | null; photo?: string | null; parentNote?: string | null };
+type Child = { id: string; full_name: string; status?: Status; note?: string | null; photo?: string | null; parentNote?: string | null; arrivedAt?: string | null; leftAt?: string | null };
 
 const STYLES: Record<Status, string> = {
   present: "data-[on=true]:bg-mint-600 data-[on=true]:text-white data-[on=true]:border-mint-600",
@@ -92,6 +93,12 @@ export function AttendanceSheet({ date, kids: children, editable, needsReason, l
                   <Avatar kind="child" id={c.id} name={c.full_name} version={c.photo} />
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-slate-900">{c.full_name}</span>
+                    {(c.arrivedAt || c.leftAt) && (
+                      <span className="block text-xs text-slate-500">
+                        {c.arrivedAt && <span className="text-mint-700">{t("Keldi")} {formatTime(c.arrivedAt)}</span>}
+                        {c.leftAt && <span className="ml-2 text-brand-700">{t("Ketdi")} {formatTime(c.leftAt)}</span>}
+                      </span>
+                    )}
                     {c.parentNote != null && (
                       <span className="mt-0.5 inline-flex max-w-full items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
                         <BellRing className="h-3 w-3 shrink-0" /><span className="truncate">{t("Ota-ona: kelmaydi")}{c.parentNote ? ` · ${c.parentNote}` : ""}</span>

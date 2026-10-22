@@ -6,12 +6,13 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getMyChildren } from "@/lib/parent";
 import { ATTENDANCE_STATUS, INVOICE_STATUS } from "@/lib/labels";
-import { addMonthsISO, ageFromBirth, currentMonthISO, formatDate, formatDateLong, formatDateTime, formatMonth, formatSom, todayISO } from "@/lib/format";
+import { addMonthsISO, currentMonthISO, formatDate, formatDateTime, formatTime, todayISO } from "@/lib/format";
 import { PageHeader, EmptyState, Notice } from "@/components/ui/misc";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { getI18n } from "@/lib/i18n/server";
 import { Avatar } from "@/components/avatar";
+import { FaceConsent } from "@/components/face-consent";
 import { AbsenceCard, type AbsenceReport } from "./absence";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,7 +31,7 @@ export default async function ParentHome() {
   const none = ["00000000-0000-0000-0000-000000000000"];
 
   const [{ data: att }, { data: invoices }, { data: news }, { data: s }, { data: reports }] = await Promise.all([
-    supabase.from("child_attendance").select("child_id, date, status").in("child_id", ids.length ? ids : none).gte("date", month).lt("date", addMonthsISO(month, 1)),
+    supabase.from("child_attendance").select("child_id, date, status, arrived_at, left_at").in("child_id", ids.length ? ids : none).gte("date", month).lt("date", addMonthsISO(month, 1)),
     supabase.from("invoices").select("child_id, period, amount_due, paid_total, balance, status, due_date").in("child_id", ids.length ? ids : none).lte("period", month),
     supabase.from("announcements").select("id, title, body, created_at").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(3),
     supabase.from("settings").select("kindergarten_name, phone").eq("id", 1).single(),
@@ -65,6 +66,12 @@ export default async function ParentHome() {
                     <span className="flex items-center gap-2 text-sm text-slate-600"><CalendarCheck className="h-4 w-4 text-slate-400" />{" "}{t("Bugun")}</span>
                     {todayRec ? <StatusBadge map={ATTENDANCE_STATUS} value={todayRec.status} /> : <Badge>{t("Hali belgilanmagan")}</Badge>}
                   </div>
+                  {todayRec?.arrived_at && (
+                    <p className="-mt-2 text-right text-xs text-slate-500">
+                      <span className="text-mint-700">{t("Keldi")} {formatTime(todayRec.arrived_at)}</span>
+                      {todayRec.left_at && <span className="ml-3 text-brand-700">{t("Olib ketildi")} {formatTime(todayRec.left_at)}</span>}
+                    </p>
+                  )}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-600">{t("Shu oy kelgan kunlar")}</span>
                     <span className="font-medium">{monthAtt.filter((a) => a.status === "present" || a.status === "late").length} / {monthAtt.length}</span>
@@ -86,6 +93,7 @@ export default async function ParentHome() {
                   {debt > 0 && (!cur || debt > Number(cur.balance)) && (
                     <Notice tone="amber">{t("Umumiy qarzdorlik (oldingi oylar bilan):")}{" "}<b>{f.formatSom(debt)}</b></Notice>
                   )}
+                  <FaceConsent childId={k.id} value={k.face_consent} />
                   <AbsenceCard childId={k.id} childName={k.full_name} today={today}
                     reports={((reports ?? []) as (AbsenceReport & { child_id: string })[]).filter((r) => r.child_id === k.id)} />
                   <div className="flex gap-4 text-sm">

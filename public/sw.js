@@ -1,6 +1,6 @@
 // Bog'cha service worker: makes the site installable and shows an offline page.
 // Personal pages and API responses are never cached; only build assets and icons are.
-const CACHE = "bogcha-v1";
+const CACHE = "bogcha-v2";
 const OFFLINE = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -23,7 +23,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(fetch(req).catch(() => caches.match(OFFLINE)));
     return;
   }
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/models/")) {
     event.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
         if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }

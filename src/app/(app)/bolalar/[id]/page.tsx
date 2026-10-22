@@ -17,6 +17,7 @@ import { resetPassword, setUserActive } from "../../xodimlar/actions";
 import { EditChild, AddGuardian, EditGuardian, UnlinkGuardian, ParentAccountButton, AddPickup, RemovePickup, AddNote, DeleteNote } from "./client";
 import { getI18n } from "@/lib/i18n/server";
 import { PhotoUpload } from "@/components/photo-upload";
+import { FaceConsent } from "@/components/face-consent";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -85,6 +86,8 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
                 {finance && <InfoRow label={t("Oylik to'lov")}>{f.formatSom(fee)}{c.monthly_fee == null && <span className="ml-1 text-xs text-slate-400">({group?.monthly_fee != null ? "guruh" : "umumiy"})</span>}</InfoRow>}
                 {finance && <InfoRow label={t("Joriy qarz")}>{totalDebt > 0 ? <span className="text-red-600">{f.formatSom(totalDebt)}</span> : <Badge tone="green">{t("Qarz yo'q")}</Badge>}</InfoRow>}
               </dl>
+              {isAdmin ? <div className="mt-4"><FaceConsent childId={c.id} value={c.face_consent} /></div>
+                : <p className="mt-4 text-xs text-slate-500">{t("Yuz orqali kelish-ketish:")}{" "}{c.face_consent ? t("ota-ona rozi") : t("rozilik yo'q")}</p>}
             </CardBody>
           </Card>
 

@@ -12,6 +12,7 @@ import { LinkButton } from "@/components/ui/button";
 import { CheckWidget } from "@/components/check-widget";
 import { checkIn, checkOut } from "../ishga-kelish/actions";
 import { getI18n } from "@/lib/i18n/server";
+import { ScanFace } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -85,7 +86,7 @@ export default async function MyDayPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title={t("Guruhlarim")} description={t("Bugungi davomat holati")} action={<LinkButton href="/davomat" size="sm"><CalendarCheck className="h-4 w-4" />{" "}{t("Davomat belgilash")}</LinkButton>} />
+          <CardHeader title={t("Guruhlarim")} description={t("Bugungi davomat holati")} action={<div className="flex gap-2"><LinkButton href="/davomat/yuz" size="sm" variant="outline"><ScanFace className="h-4 w-4" />{" "}{t("Yuz orqali")}</LinkButton><LinkButton href="/davomat" size="sm"><CalendarCheck className="h-4 w-4" />{" "}{t("Davomat belgilash")}</LinkButton></div>} />
           {myGroups.length === 0 ? <EmptyState title={t("Sizga hali guruh biriktirilmagan")} /> : (
             <ul className="divide-y divide-slate-100">
               {myGroups.map((g) => {

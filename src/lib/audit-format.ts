@@ -27,12 +27,13 @@ export const FIELD_LABELS: Record<string, string> = {
   late_grace_minutes: "Kechikish chegarasi (daqiqa)", early_leave_grace_minutes: "Erta ketish chegarasi (daqiqa)",
   min_shift_minutes: "Minimal ish vaqti (daqiqa)", max_shift_minutes: "Maksimal ish vaqti (daqiqa)",
   location_radius_m: "Radius (metr)", photo_updated_at: "Rasm", is_current: "Joriy",
+  arrived_at: "Kelgan vaqti", left_at: "Ketgan vaqti", check_method: "Qanday belgilandi", face_consent: "Yuz orqali tekshirishga rozilik",
 };
 
 const MONEY = new Set(["monthly_fee", "base_amount", "adjustments_total", "paid_total", "amount_due", "balance", "amount", "default_monthly_fee"]);
 const ENUMS: Record<string, Record<string, string | { label: string }>> = {
   role: ROLE_LABELS, method: PAYMENT_METHOD, kind: ADJUSTMENT_KIND, audience: AUDIENCE_LABELS, category: NOTE_CATEGORY,
-  check_in_source: ATTENDANCE_SOURCE,
+  check_in_source: ATTENDANCE_SOURCE, check_method: { face: "Yuz orqali", manual: "Qo'lda" },
 };
 const STATUS_BY_ENTITY: Record<string, Record<string, { label: string }>> = {
   children: CHILD_STATUS, employees: EMPLOYMENT_STATUS, invoices: INVOICE_STATUS, child_attendance: ATTENDANCE_STATUS,
