@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { T } from "@/lib/i18n/client";
 
 const base =
   "w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-50 disabled:text-slate-500 aria-[invalid=true]:border-red-400 aria-[invalid=true]:ring-red-500/10";
@@ -44,8 +45,8 @@ export function Checkbox({ label, hint, className, ...props }: React.InputHTMLAt
     <label className={cn("flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50", className)}>
       <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" {...props} />
       <span>
-        <span className="block text-sm font-medium text-slate-800">{label}</span>
-        {hint && <span className="block text-xs text-slate-500">{hint}</span>}
+        <span className="block text-sm font-medium text-slate-800"><T>{label}</T></span>
+        {hint && <span className="block text-xs text-slate-500"><T>{hint}</T></span>}
       </span>
     </label>
   );

@@ -15,8 +15,12 @@ import { LinkButton } from "@/components/ui/button";
 import { AccountActions } from "@/components/account-actions";
 import { resetPassword, setUserActive } from "../../xodimlar/actions";
 import { EditChild, AddGuardian, EditGuardian, UnlinkGuardian, ParentAccountButton, AddPickup, RemovePickup, AddNote, DeleteNote } from "./client";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Bola profili" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Bola profili") };
+}
 
 type Guardian = {
   relationship: string; is_primary: boolean; can_pickup: boolean;
@@ -25,6 +29,7 @@ type Guardian = {
 };
 
 export default async function ChildPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t, f } = await getI18n();
   const user = await requireUser(STAFF_ROLES);
   const isAdmin = ADMIN_ROLES.includes(user.profile.role);
   const finance = canViewFinance(user);
@@ -57,41 +62,41 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="space-y-6">
-      <PageHeader title={c.full_name} description={`${ageFromBirth(c.birth_date)} · ${group?.name ?? "Guruhsiz"}`} back={{ href: "/bolalar", label: "Bolalar" }}
+      <PageHeader title={c.full_name} description={`${f.ageFromBirth(c.birth_date)} · ${group?.name ?? "Guruhsiz"}`} back={{ href: "/bolalar", label: "Bolalar" }}
         actions={<>
-          {finance && <LinkButton variant="outline" href={`/tolovlar?bola=${c.id}`}><Wallet className="h-4 w-4" /> To&apos;lovlar</LinkButton>}
+          {finance && <LinkButton variant="outline" href={`/tolovlar?bola=${c.id}`}><Wallet className="h-4 w-4" />{" "}{t("To'lovlar")}</LinkButton>}
           {isAdmin && <EditChild groups={groups ?? []} child={c} />}
         </>} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card>
-            <CardHeader title="Asosiy ma'lumotlar" />
+            <CardHeader title={t("Asosiy ma'lumotlar")} />
             <CardBody>
               <dl className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:gap-x-8 sm:divide-y-0">
-                <InfoRow label="Tug'ilgan sana">{formatDate(c.birth_date)}</InfoRow>
-                <InfoRow label="Jinsi">{c.gender === "male" ? "O'g'il" : c.gender === "female" ? "Qiz" : "—"}</InfoRow>
-                <InfoRow label="Guruh">{group ? <Link className="text-brand-700" href={`/guruhlar/${group.id}`}>{group.name}</Link> : "—"}</InfoRow>
-                <InfoRow label="Holati"><StatusBadge map={CHILD_STATUS} value={c.status} /></InfoRow>
-                <InfoRow label="Qabul qilingan">{formatDate(c.enrollment_date)}</InfoRow>
-                {c.leave_date && <InfoRow label="Ketgan sana">{formatDate(c.leave_date)}</InfoRow>}
-                {finance && <InfoRow label="Oylik to'lov">{formatSom(fee)}{c.monthly_fee == null && <span className="ml-1 text-xs text-slate-400">({group?.monthly_fee != null ? "guruh" : "umumiy"})</span>}</InfoRow>}
-                {finance && <InfoRow label="Joriy qarz">{totalDebt > 0 ? <span className="text-red-600">{formatSom(totalDebt)}</span> : <Badge tone="green">Qarz yo&apos;q</Badge>}</InfoRow>}
+                <InfoRow label={t("Tug'ilgan sana")}>{formatDate(c.birth_date)}</InfoRow>
+                <InfoRow label={t("Jinsi")}>{c.gender === "male" ? t("O'g'il") : c.gender === "female" ? t("Qiz") : "—"}</InfoRow>
+                <InfoRow label={t("Guruh")}>{group ? <Link className="text-brand-700" href={`/guruhlar/${group.id}`}>{group.name}</Link> : "—"}</InfoRow>
+                <InfoRow label={t("Holati")}><StatusBadge map={CHILD_STATUS} value={c.status} /></InfoRow>
+                <InfoRow label={t("Qabul qilingan")}>{formatDate(c.enrollment_date)}</InfoRow>
+                {c.leave_date && <InfoRow label={t("Ketgan sana")}>{formatDate(c.leave_date)}</InfoRow>}
+                {finance && <InfoRow label={t("Oylik to'lov")}>{f.formatSom(fee)}{c.monthly_fee == null && <span className="ml-1 text-xs text-slate-400">({group?.monthly_fee != null ? "guruh" : "umumiy"})</span>}</InfoRow>}
+                {finance && <InfoRow label={t("Joriy qarz")}>{totalDebt > 0 ? <span className="text-red-600">{f.formatSom(totalDebt)}</span> : <Badge tone="green">{t("Qarz yo'q")}</Badge>}</InfoRow>}
               </dl>
             </CardBody>
           </Card>
 
           <Card>
-            <CardHeader title="Ota-onalar / vasiylar" action={isAdmin && <AddGuardian childId={c.id} guardians={allGuardians ?? []} />} />
-            {guardians.length === 0 ? <EmptyState title="Ota-ona bog'lanmagan" /> : (
+            <CardHeader title={t("Ota-onalar / vasiylar")} action={isAdmin && <AddGuardian childId={c.id} guardians={allGuardians ?? []} />} />
+            {guardians.length === 0 ? <EmptyState title={t("Ota-ona bog'lanmagan")} /> : (
               <ul className="divide-y divide-slate-100">
                 {guardians.map(({ guardians: g, relationship, is_primary, can_pickup }) => g && (
                   <li key={g.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">
                       <p className="font-medium text-slate-900">
                         {g.full_name} <span className="text-sm font-normal text-slate-500">· {relationship}</span>
-                        {is_primary && <Badge tone="blue" className="ml-2">Asosiy</Badge>}
-                        {can_pickup && <Badge tone="green" className="ml-1">Olib keta oladi</Badge>}
+                        {is_primary && <Badge tone="blue" className="ml-2">{t("Asosiy")}</Badge>}
+                        {can_pickup && <Badge tone="green" className="ml-1">{t("Olib keta oladi")}</Badge>}
                       </p>
                       <p className="flex flex-wrap gap-x-4 text-sm">
                         <a href={`tel:${g.phone}`} className="inline-flex items-center gap-1 text-brand-700"><Phone className="h-3.5 w-3.5" />{g.phone}</a>
@@ -102,9 +107,9 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
                         <div className="pt-1 text-sm">
                           {g.profiles ? (
                             <div className="space-y-2">
-                              <p className="text-slate-600">Kabinet: <span className="font-mono">{g.profiles.username}</span>
-                                {!g.profiles.is_active && <Badge tone="red" className="ml-1">bloklangan</Badge>}
-                                {g.profiles.must_change_password && <Badge tone="amber" className="ml-1">hali kirmagan</Badge>}</p>
+                              <p className="text-slate-600">{t("Kabinet:")}{" "}<span className="font-mono">{g.profiles.username}</span>
+                                {!g.profiles.is_active && <Badge tone="red" className="ml-1">{t("bloklangan")}</Badge>}
+                                {g.profiles.must_change_password && <Badge tone="amber" className="ml-1">{t("hali kirmagan")}</Badge>}</p>
                               <AccountActions profileId={g.profile_id!} isActive={g.profiles.is_active} resetAction={resetPassword} activeAction={setUserActive} />
                             </div>
                           ) : <ParentAccountButton guardianId={g.id} suggested={suggestUsername(g.full_name)} />}
@@ -124,10 +129,10 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
           </Card>
 
           <Card>
-            <CardHeader title="Davomat" description={`Oxirgi 60 kun: keldi ${counts.present}, kechikdi ${counts.late}, kelmagan ${counts.absent}, sababli ${counts.excused}`} />
-            {attRows.length === 0 ? <EmptyState title="Davomat yozuvlari yo'q" /> : (
+            <CardHeader title={t("Davomat")} description={t("Oxirgi 60 kun: keldi {0}, kechikdi {1}, kelmagan {2}, sababli {3}", [counts.present, counts.late, counts.absent, counts.excused])} />
+            {attRows.length === 0 ? <EmptyState title={t("Davomat yozuvlari yo'q")} /> : (
               <Table>
-                <THead><tr><TH>Sana</TH><TH>Holat</TH><TH>Izoh</TH><TH>Kim belgiladi</TH></tr></THead>
+                <THead><tr><TH>{t("Sana")}</TH><TH>{t("Holat")}</TH><TH>{t("Izoh")}</TH><TH>{t("Kim belgiladi")}</TH></tr></THead>
                 <tbody>
                   {attRows.slice(0, 30).map((a) => (
                     <TR key={a.date}>
@@ -144,17 +149,17 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
 
           {finance && (
             <Card>
-              <CardHeader title="To'lovlar" action={<LinkButton size="sm" href={`/tolovlar?bola=${c.id}`}>To&apos;lov qabul qilish</LinkButton>} />
-              {(invoices ?? []).length === 0 ? <EmptyState title="Hisoblar hali yaratilmagan" /> : (
+              <CardHeader title={t("To'lovlar")} action={<LinkButton size="sm" href={`/tolovlar?bola=${c.id}`}>{t("To'lov qabul qilish")}</LinkButton>} />
+              {(invoices ?? []).length === 0 ? <EmptyState title={t("Hisoblar hali yaratilmagan")} /> : (
                 <Table>
-                  <THead><tr><TH>Oy</TH><TH className="text-right">Hisoblangan</TH><TH className="text-right">To&apos;langan</TH><TH className="text-right">Qoldiq</TH><TH>Holat</TH></tr></THead>
+                  <THead><tr><TH>{t("Oy")}</TH><TH className="text-right">{t("Hisoblangan")}</TH><TH className="text-right">{t("To'langan")}</TH><TH className="text-right">{t("Qoldiq")}</TH><TH>{t("Holat")}</TH></tr></THead>
                   <tbody>
                     {(invoices ?? []).map((i) => (
                       <TR key={i.id}>
-                        <TD>{formatMonth(i.period)}</TD>
-                        <TD className="text-right">{formatSom(i.amount_due)}</TD>
-                        <TD className="text-right">{formatSom(i.paid_total)}</TD>
-                        <TD className="text-right font-medium">{formatSom(i.balance)}</TD>
+                        <TD>{f.formatMonth(i.period)}</TD>
+                        <TD className="text-right">{f.formatSom(i.amount_due)}</TD>
+                        <TD className="text-right">{f.formatSom(i.paid_total)}</TD>
+                        <TD className="text-right font-medium">{f.formatSom(i.balance)}</TD>
                         <TD><StatusBadge map={INVOICE_STATUS} value={i.status} /></TD>
                       </TR>
                     ))}
@@ -163,12 +168,12 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
               )}
               {(payments ?? []).length > 0 && (
                 <div className="border-t border-slate-100 px-5 py-4">
-                  <p className="mb-2 text-sm font-medium text-slate-700">To&apos;lovlar tarixi</p>
+                  <p className="mb-2 text-sm font-medium text-slate-700">{t("To'lovlar tarixi")}</p>
                   <ul className="space-y-1.5 text-sm">
                     {((payments ?? []) as unknown as { id: string; amount: number; method: string; paid_on: string; receipt_number: string; is_void: boolean; invoices: { period: string } | null }[]).map((p) => (
                       <li key={p.id} className={`flex justify-between gap-3 ${p.is_void ? "text-slate-400 line-through" : ""}`}>
-                        <span>{formatDate(p.paid_on)} · {formatMonth(p.invoices?.period)} · {PAYMENT_METHOD[p.method]} · {p.receipt_number}</span>
-                        <span className="font-medium">{formatSom(p.amount)}</span>
+                        <span>{formatDate(p.paid_on)} · {f.formatMonth(p.invoices?.period)} · {t(PAYMENT_METHOD[p.method])} · {p.receipt_number}</span>
+                        <span className="font-medium">{f.formatSom(p.amount)}</span>
                       </li>
                     ))}
                   </ul>
@@ -180,7 +185,7 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Olib ketuvchilar" description="Ruxsat berilgan shaxslar" action={isAdmin && <AddPickup childId={c.id} />} />
+            <CardHeader title={t("Olib ketuvchilar")} description={t("Ruxsat berilgan shaxslar")} action={isAdmin && <AddPickup childId={c.id} />} />
             <CardBody className="space-y-3">
               {guardians.filter((g) => g.can_pickup).map(({ guardians: g, relationship }) => g && (
                 <div key={g.id} className="text-sm"><p className="font-medium text-slate-900">{g.full_name} <span className="font-normal text-slate-500">({relationship})</span></p><a className="text-brand-700" href={`tel:${g.phone}`}>{g.phone}</a></div>
@@ -191,19 +196,19 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
                   {isAdmin && <RemovePickup id={p.id} childId={c.id} />}
                 </div>
               ))}
-              {guardians.filter((g) => g.can_pickup).length + (pickups ?? []).length === 0 && <p className="text-sm text-slate-500">Hech kim ko&apos;rsatilmagan</p>}
+              {guardians.filter((g) => g.can_pickup).length + (pickups ?? []).length === 0 && <p className="text-sm text-slate-500">{t("Hech kim ko'rsatilmagan")}</p>}
             </CardBody>
           </Card>
 
           {user.profile.role !== "accountant" && (
             <Card>
-              <CardHeader title="Maxfiy izohlar" description="Faqat xodimlar uchun" action={<AddNote childId={c.id} canSensitive={hasPermission(user, "children.view_notes")} />} />
+              <CardHeader title={t("Maxfiy izohlar")} description={t("Faqat xodimlar uchun")} action={<AddNote childId={c.id} canSensitive={hasPermission(user, "children.view_notes")} />} />
               <CardBody className="space-y-4">
-                {(notes ?? []).length === 0 ? <p className="flex items-center gap-2 text-sm text-slate-500"><ShieldAlert className="h-4 w-4" />Izohlar yo&apos;q yoki ko&apos;rishga ruxsat yo&apos;q</p> :
+                {(notes ?? []).length === 0 ? <p className="flex items-center gap-2 text-sm text-slate-500"><ShieldAlert className="h-4 w-4" />{t("Izohlar yo'q yoki ko'rishga ruxsat yo'q")}</p> :
                   ((notes ?? []) as unknown as { id: string; category: string; body: string; created_at: string; profiles: { full_name: string } | null }[]).map((n) => (
                     <div key={n.id} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
                       <div className="flex items-start justify-between gap-2">
-                        <Badge tone={n.category === "allergy" || n.category === "medical" ? "red" : "gray"}>{NOTE_CATEGORY[n.category]}</Badge>
+                        <Badge tone={n.category === "allergy" || n.category === "medical" ? "red" : "gray"}>{t(NOTE_CATEGORY[n.category])}</Badge>
                         {isAdmin && <DeleteNote id={n.id} childId={c.id} />}
                       </div>
                       <p className="mt-2 whitespace-pre-line text-sm text-slate-800">{n.body}</p>

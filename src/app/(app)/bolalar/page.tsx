@@ -13,8 +13,12 @@ import { StatusBadge } from "@/components/ui/badge";
 import { Table, THead, TH, TR, TD } from "@/components/ui/table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { LinkButton } from "@/components/ui/button";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Bolalar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Bolalar") };
+}
 const PAGE = 25;
 
 type Row = {
@@ -24,6 +28,7 @@ type Row = {
 };
 
 export default async function ChildrenPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t, f } = await getI18n();
   const user = await requireUser(STAFF_ROLES);
   const isAdmin = ADMIN_ROLES.includes(user.profile.role);
   const showFee = canViewFinance(user);
@@ -57,8 +62,8 @@ export default async function ChildrenPage({ searchParams }: { searchParams: Pro
 
   return (
     <div>
-      <PageHeader title="Bolalar" description="Bog'chadagi bolalar ro'yxati"
-        actions={isAdmin && <LinkButton href="/bolalar/yangi"><Plus className="h-4 w-4" /> Yangi bola</LinkButton>} />
+      <PageHeader title={t("Bolalar")} description={t("Bog'chadagi bolalar ro'yxati")}
+        actions={isAdmin && <LinkButton href="/bolalar/yangi"><Plus className="h-4 w-4" />{" "}{t("Yangi bola")}</LinkButton>} />
       <Card>
         <div className="border-b border-slate-100 p-4">
           <FilterBar filters={[
@@ -68,12 +73,12 @@ export default async function ChildrenPage({ searchParams }: { searchParams: Pro
           ]} />
         </div>
         {rows.length === 0 ? (
-          <EmptyState title="Bolalar topilmadi" description={q ? "Boshqa so'z bilan qidirib ko'ring" : undefined}
-            action={isAdmin && !q ? <LinkButton href="/bolalar/yangi">Bola qo&apos;shish</LinkButton> : undefined} />
+          <EmptyState title={t("Bolalar topilmadi")} description={q ? t("Boshqa so'z bilan qidirib ko'ring") : undefined}
+            action={isAdmin && !q ? <LinkButton href="/bolalar/yangi">{t("Bola qo'shish")}</LinkButton> : undefined} />
         ) : (
           <>
             <Table>
-              <THead><tr><TH>Bola</TH><TH>Guruh</TH><TH>Ota-ona</TH><TH>Qabul qilingan</TH>{showFee && <TH className="text-right">Oylik to&apos;lov</TH>}<TH>Holat</TH></tr></THead>
+              <THead><tr><TH>{t("Bola")}</TH><TH>{t("Guruh")}</TH><TH>{t("Ota-ona")}</TH><TH>{t("Qabul qilingan")}</TH>{showFee && <TH className="text-right">{t("Oylik to'lov")}</TH>}<TH>{t("Holat")}</TH></tr></THead>
               <tbody>
                 {rows.map((c) => {
                   const primary = c.child_guardians.find((g) => g.is_primary) ?? c.child_guardians[0];
@@ -81,7 +86,7 @@ export default async function ChildrenPage({ searchParams }: { searchParams: Pro
                     <TR key={c.id}>
                       <TD>
                         <Link href={`/bolalar/${c.id}`} className="font-medium text-slate-900 hover:text-brand-700">{c.full_name}</Link>
-                        <p className="text-xs text-slate-500">{ageFromBirth(c.birth_date)} · {formatDate(c.birth_date)}</p>
+                        <p className="text-xs text-slate-500">{f.ageFromBirth(c.birth_date)} · {formatDate(c.birth_date)}</p>
                       </TD>
                       <TD>{c.kg_groups?.name ?? <span className="text-slate-400">—</span>}</TD>
                       <TD>
@@ -91,7 +96,7 @@ export default async function ChildrenPage({ searchParams }: { searchParams: Pro
                         </> : <span className="text-slate-400">—</span>}
                       </TD>
                       <TD>{formatDate(c.enrollment_date)}</TD>
-                      {showFee && <TD className="whitespace-nowrap text-right">{formatSom(c.monthly_fee ?? c.kg_groups?.monthly_fee ?? s?.default_monthly_fee)}</TD>}
+                      {showFee && <TD className="whitespace-nowrap text-right">{f.formatSom(c.monthly_fee ?? c.kg_groups?.monthly_fee ?? s?.default_monthly_fee)}</TD>}
                       <TD><StatusBadge map={CHILD_STATUS} value={c.status} /></TD>
                     </TR>
                   );

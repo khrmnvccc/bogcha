@@ -7,6 +7,7 @@ import { Button, buttonClass } from "@/components/ui/button";
 import { ActionForm, SubmitButton, Field, type ActionState } from "@/components/ui/action-form";
 import { Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/client";
 
 export function Dialog({
   trigger, title, description, children, open, onOpenChange, wide,
@@ -14,6 +15,7 @@ export function Dialog({
   trigger?: React.ReactNode; title: string; description?: string; children: React.ReactNode;
   open?: boolean; onOpenChange?: (o: boolean) => void; wide?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       {trigger && <D.Trigger asChild>{trigger}</D.Trigger>}
@@ -27,14 +29,14 @@ export function Dialog({
         >
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
-              <D.Title className="text-lg font-semibold text-slate-900">{title}</D.Title>
+              <D.Title className="text-lg font-semibold text-slate-900">{t(title)}</D.Title>
               {description ? (
-                <D.Description className="mt-1 text-sm text-slate-500">{description}</D.Description>
+                <D.Description className="mt-1 text-sm text-slate-500">{t(description)}</D.Description>
               ) : (
-                <D.Description className="sr-only">{title}</D.Description>
+                <D.Description className="sr-only">{t(title)}</D.Description>
               )}
             </div>
-            <D.Close className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label="Yopish">
+            <D.Close className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label={t("Yopish")}>
               <X className="h-5 w-5" />
             </D.Close>
           </div>
@@ -53,6 +55,7 @@ export function FormDialog({
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   children: React.ReactNode; submitText?: string; wide?: boolean; hidden?: Record<string, string>;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = React.useState(false);
   return (
     <Dialog trigger={trigger} title={title} description={description} open={open} onOpenChange={setOpen} wide={wide}>
@@ -60,8 +63,8 @@ export function FormDialog({
         {hidden && Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         {children}
         <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-          <Button variant="outline" onClick={() => setOpen(false)}>Bekor qilish</Button>
-          <SubmitButton>{submitText}</SubmitButton>
+          <Button variant="outline" onClick={() => setOpen(false)}>{t("Bekor qilish")}</Button>
+          <SubmitButton>{t(submitText)}</SubmitButton>
         </div>
       </ActionForm>
     </Dialog>
@@ -76,6 +79,7 @@ export function ConfirmAction({
   action: (prev: ActionState, fd: FormData) => Promise<ActionState>;
   hidden: Record<string, string>; confirmText?: string; danger?: boolean; reasonLabel?: string;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = React.useState(false);
   return (
     <A.Root open={open} onOpenChange={setOpen}>
@@ -88,20 +92,20 @@ export function ConfirmAction({
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <A.Title className="text-base font-semibold text-slate-900">{title}</A.Title>
-              <A.Description className="mt-1 text-sm text-slate-600">{description}</A.Description>
+              <A.Title className="text-base font-semibold text-slate-900">{t(title)}</A.Title>
+              <A.Description className="mt-1 text-sm text-slate-600">{t(description)}</A.Description>
             </div>
           </div>
           <ActionForm action={action} onSuccess={() => setOpen(false)} className="mt-5 space-y-4">
             {Object.entries(hidden).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
             {reasonLabel && (
               <Field name="reason" label={reasonLabel} required>
-                <Textarea rows={2} placeholder="Sababni qisqacha yozing" />
+                <Textarea rows={2} placeholder={t("Sababni qisqacha yozing")} />
               </Field>
             )}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <A.Cancel className={buttonClass("outline")}>Bekor qilish</A.Cancel>
-              <SubmitButton variant={danger ? "danger" : "primary"}>{confirmText}</SubmitButton>
+              <A.Cancel className={buttonClass("outline")}>{t("Bekor qilish")}</A.Cancel>
+              <SubmitButton variant={danger ? "danger" : "primary"}>{t(confirmText)}</SubmitButton>
             </div>
           </ActionForm>
         </A.Content>

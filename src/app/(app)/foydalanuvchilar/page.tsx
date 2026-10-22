@@ -13,8 +13,12 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { AccountActions } from "@/components/account-actions";
 import { resetPassword, setUserActive } from "../xodimlar/actions";
 import { AccessDialog } from "./access-dialog";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Foydalanuvchilar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Foydalanuvchilar") };
+}
 
 type U = {
   id: string; full_name: string; username: string | null; role: Role; permissions: string[]; is_active: boolean; must_change_password: boolean; created_at: string;
@@ -23,6 +27,7 @@ type U = {
 const one = <T,>(v: T[] | T | null): T | null => (Array.isArray(v) ? v[0] ?? null : v);
 
 export default async function UsersPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getI18n();
   const user = await requireUser(ADMIN_ROLES);
   const params = await searchParams;
   const q = safeSearch(sp(params.q));
@@ -40,11 +45,9 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
   return (
     <div>
-      <PageHeader title="Foydalanuvchilar" description="Tizimga kirish hisoblari, rollar va ruxsatlar" />
-      <Notice tone="blue" className="mb-4">
-        Xodim hisobi <Link href="/xodimlar" className="font-medium underline">Xodimlar</Link> bo&apos;limida, ota-ona hisobi esa{" "}
-        <Link href="/bolalar" className="font-medium underline">bola profilida</Link> yaratiladi. Shunda har bir hisob aniq xodim yoki oilaga bog&apos;lanadi.
-      </Notice>
+      <PageHeader title={t("Foydalanuvchilar")} description={t("Tizimga kirish hisoblari, rollar va ruxsatlar")} />
+      <Notice tone="blue" className="mb-4">{t("Xodim hisobi")}{" "}<Link href="/xodimlar" className="font-medium underline">{t("Xodimlar")}</Link>{" "}{t("bo'limida, ota-ona hisobi esa")}{" "}
+        <Link href="/bolalar" className="font-medium underline">{t("bola profilida")}</Link>{" "}{t("yaratiladi. Shunda har bir hisob aniq xodim yoki oilaga bog'lanadi.")}</Notice>
       <Card>
         <div className="border-b border-slate-100 p-4">
           <FilterBar filters={[
@@ -53,9 +56,9 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             { type: "select", name: "holat", label: "Holat", options: [{ value: "faol", label: "Faol" }, { value: "bloklangan", label: "Bloklangan" }] },
           ]} />
         </div>
-        {rows.length === 0 ? <EmptyState title="Foydalanuvchilar topilmadi" /> : (
+        {rows.length === 0 ? <EmptyState title={t("Foydalanuvchilar topilmadi")} /> : (
           <Table>
-            <THead><tr><TH>Foydalanuvchi</TH><TH>Rol</TH><TH>Bog&apos;langan</TH><TH>Holat</TH><TH>Yaratilgan</TH><TH className="text-right">Amallar</TH></tr></THead>
+            <THead><tr><TH>{t("Foydalanuvchi")}</TH><TH>{t("Rol")}</TH><TH>{t("Bog'langan")}</TH><TH>{t("Holat")}</TH><TH>{t("Yaratilgan")}</TH><TH className="text-right">{t("Amallar")}</TH></tr></THead>
             <tbody>
               {rows.map((u) => {
                 const emp = one(u.employees);
@@ -69,17 +72,17 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                       <p className="font-mono text-xs text-slate-500">{u.username}</p>
                     </TD>
                     <TD>
-                      <Badge tone={leadership ? "violet" : u.role === "parent" ? "gray" : "blue"}>{ROLE_LABELS[u.role]}</Badge>
-                      {u.permissions.length > 0 && <p className="mt-1 text-xs text-slate-500">{u.permissions.map((p) => PERMISSION_LABELS[p]?.label).join("; ")}</p>}
+                      <Badge tone={leadership ? "violet" : u.role === "parent" ? "gray" : "blue"}>{t(ROLE_LABELS[u.role])}</Badge>
+                      {u.permissions.length > 0 && <p className="mt-1 text-xs text-slate-500">{u.permissions.map((p) => t(PERMISSION_LABELS[p]?.label ?? "")).join("; ")}</p>}
                     </TD>
                     <TD className="text-sm">
-                      {emp ? <Link href={`/xodimlar/${emp.id}`} className="text-brand-700">Xodim kartasi</Link>
-                        : g ? (g.child_guardians[0] ? <Link href={`/bolalar/${g.child_guardians[0].child_id}`} className="text-brand-700">{g.child_guardians.length} ta bola</Link> : <span className="text-slate-400">Bola bog&apos;lanmagan</span>)
+                      {emp ? <Link href={`/xodimlar/${emp.id}`} className="text-brand-700">{t("Xodim kartasi")}</Link>
+                        : g ? (g.child_guardians[0] ? <Link href={`/bolalar/${g.child_guardians[0].child_id}`} className="text-brand-700">{g.child_guardians.length}{" "}{t("ta bola")}</Link> : <span className="text-slate-400">{t("Bola bog'lanmagan")}</span>)
                         : <span className="text-slate-400">—</span>}
                     </TD>
                     <TD>
-                      {u.is_active ? <Badge tone="green">Faol</Badge> : <Badge tone="red">Bloklangan</Badge>}
-                      {u.must_change_password && <Badge tone="amber" className="ml-1">Vaqtinchalik parol</Badge>}
+                      {u.is_active ? <Badge tone="green">{t("Faol")}</Badge> : <Badge tone="red">{t("Bloklangan")}</Badge>}
+                      {u.must_change_password && <Badge tone="amber" className="ml-1">{t("Vaqtinchalik parol")}</Badge>}
                     </TD>
                     <TD>{formatDate(u.created_at)}</TD>
                     <TD className="text-right">
@@ -88,7 +91,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                           <AccessDialog profileId={u.id} role={u.role} permissions={u.permissions} canLeadership={isDirector} />
                           <AccountActions profileId={u.id} isActive={u.is_active} resetAction={resetPassword} activeAction={setUserActive} />
                         </div>
-                      ) : <span className="text-xs text-slate-400">{u.id === user.id ? "Siz" : "—"}</span>}
+                      ) : <span className="text-xs text-slate-400">{u.id === user.id ? t("Siz") : "—"}</span>}
                     </TD>
                   </TR>
                 );

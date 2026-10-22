@@ -8,10 +8,15 @@ import { PasswordForm } from "@/components/password-form";
 import { ContactForm } from "./contact-form";
 import { TelegramConnect } from "./telegram-card";
 import { telegramConfigured } from "@/lib/integrations/telegram";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Profil" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Profil") };
+}
 
 export default async function ProfilePage() {
+  const { t } = await getI18n();
   const user = await requireUser();
   const supabase = await createClient();
   const { data: g } = user.guardianId
@@ -20,28 +25,28 @@ export default async function ProfilePage() {
   const isParent = user.profile.role === "parent";
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title="Profil" />
+      <PageHeader title={t("Profil")} />
       <Card>
-        <CardHeader title="Hisob" />
+        <CardHeader title={t("Hisob")} />
         <CardBody>
           <dl className="divide-y divide-slate-100">
-            <InfoRow label="F.I.Sh.">{user.profile.full_name}</InfoRow>
-            <InfoRow label="Login"><span className="font-mono">{user.profile.username}</span></InfoRow>
-            <InfoRow label="Roli">{ROLE_LABELS[user.profile.role]}</InfoRow>
+            <InfoRow label={t("F.I.Sh.")}>{user.profile.full_name}</InfoRow>
+            <InfoRow label={t("Login")}><span className="font-mono">{user.profile.username}</span></InfoRow>
+            <InfoRow label={t("Roli")}>{t(ROLE_LABELS[user.profile.role])}</InfoRow>
           </dl>
-          <p className="mt-3 text-xs text-slate-500">Ism yoki loginni o&apos;zgartirish uchun administratorga murojaat qiling.</p>
+          <p className="mt-3 text-xs text-slate-500">{t("Ism yoki loginni o'zgartirish uchun administratorga murojaat qiling.")}</p>
         </CardBody>
       </Card>
       <Card>
-        <CardHeader title="Aloqa ma'lumotlari" description={isParent ? "Bog'cha siz bilan shu raqamlar orqali bog'lanadi" : undefined} />
+        <CardHeader title={t("Aloqa ma'lumotlari")} description={isParent ? t("Bog'cha siz bilan shu raqamlar orqali bog'lanadi") : undefined} />
         <CardBody><ContactForm isParent={isParent} v={g ?? { phone: user.profile.phone }} /></CardBody>
       </Card>
       <Card id="telegram">
-        <CardHeader title="Telegram xabarnomalari" />
+        <CardHeader title={t("Telegram xabarnomalari")} />
         <CardBody><TelegramConnect linkedAt={user.profile.telegram_linked_at} configured={telegramConfigured()} /></CardBody>
       </Card>
       <Card id="parol">
-        <CardHeader title="Parolni almashtirish" />
+        <CardHeader title={t("Parolni almashtirish")} />
         <CardBody className="max-w-md"><PasswordForm /></CardBody>
       </Card>
     </div>

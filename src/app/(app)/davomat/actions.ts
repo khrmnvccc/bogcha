@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { authorize, isUser, dbErrorMessage, type ActionState } from "@/lib/actions";
 import { zDate } from "@/lib/validation";
 import { todayISO } from "@/lib/format";
+import { tr } from "@/lib/i18n/server";
 
 const itemsSchema = z.array(z.object({
   child_id: z.string().uuid(),
@@ -36,5 +37,5 @@ export async function saveChildAttendance(_p: ActionState, fd: FormData): Promis
   if (error) return { ok: false, message: dbErrorMessage(error) };
   revalidatePath("/davomat");
   revalidatePath("/panel");
-  return { ok: true, message: `${data} ta bola uchun davomat saqlandi` };
+  return { ok: true, message: await tr("{0} ta bola uchun davomat saqlandi", [data]) };
 }

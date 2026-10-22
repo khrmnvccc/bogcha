@@ -6,6 +6,7 @@ import { authorize, isUser, dbErrorMessage, fieldErrors, type ActionState } from
 import { ADMIN_ROLES, STAFF_ROLES } from "@/lib/auth";
 import { zDate, zUuid, zText } from "@/lib/validation";
 import { tashkentDateTimeToISO } from "@/lib/format";
+import { tr } from "@/lib/i18n/server";
 
 const geo = z.object({
   lat: z.coerce.number().min(-90).max(90).optional().catch(undefined),
@@ -32,8 +33,8 @@ async function doCheck(kind: "in" | "out", fd: FormData): Promise<ActionState> {
   return {
     ok: true,
     message: kind === "in"
-      ? `Ishga kelganingiz qayd etildi${verified ? " (joylashuv tasdiqlandi)" : ""}`
-      : `Ishdan ketganingiz qayd etildi${verified ? " (joylashuv tasdiqlandi)" : ""}`,
+      ? await tr("Ishga kelganingiz qayd etildi{0}", [verified ? " (joylashuv tasdiqlandi)" : ""])
+      : await tr("Ishdan ketganingiz qayd etildi{0}", [verified ? " (joylashuv tasdiqlandi)" : ""]),
   };
 }
 

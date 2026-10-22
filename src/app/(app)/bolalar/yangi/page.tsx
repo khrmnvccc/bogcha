@@ -4,10 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/misc";
 import { Card, CardBody } from "@/components/ui/card";
 import { NewChildForm } from "../forms";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Yangi bola" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Yangi bola") };
+}
 
 export default async function NewChildPage() {
+  const { t } = await getI18n();
   await requireUser(ADMIN_ROLES);
   const supabase = await createClient();
   const [{ data: groups }, { data: guardians }] = await Promise.all([
@@ -16,7 +21,7 @@ export default async function NewChildPage() {
   ]);
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Yangi bola qo'shish" back={{ href: "/bolalar", label: "Bolalar" }} />
+      <PageHeader title={t("Yangi bola qo'shish")} back={{ href: "/bolalar", label: "Bolalar" }} />
       <Card><CardBody><NewChildForm groups={groups ?? []} guardians={guardians ?? []} /></CardBody></Card>
     </div>
   );

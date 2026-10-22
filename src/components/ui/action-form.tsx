@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Label } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/client";
 
 export type ActionState = {
   ok?: boolean;
@@ -31,6 +32,7 @@ export function ActionForm({
   redirectTo?: string;
   successToast?: boolean;
 }) {
+  const { t } = useI18n();
   const [state, formAction] = useActionState(action, {});
   const ref = useRef<HTMLFormElement>(null);
   const router = useRouter();
@@ -41,14 +43,14 @@ export function ActionForm({
 
   useEffect(() => {
     if (state.ok === true) {
-      if (state.message && successToast) toast.success(state.message);
+      if (state.message && successToast) toast.success(t(state.message));
       if (resetOnSuccess) ref.current?.reset();
       onSuccessRef.current?.(state);
       if (redirectTo) router.push(redirectTo);
     } else if (state.ok === false && state.message) {
-      toast.error(state.message);
+      toast.error(t(state.message));
     }
-  }, [state, resetOnSuccess, redirectTo, router, successToast]);
+  }, [state, resetOnSuccess, redirectTo, router, successToast, t]);
 
   return (
     <FormErrors.Provider value={state.ok === false ? state.errors ?? {} : {}}>
@@ -64,13 +66,14 @@ export function Field({
 }: {
   name: string; label?: string; hint?: string; children: React.ReactNode; className?: string; required?: boolean;
 }) {
+  const { t } = useI18n();
   const errors = React.useContext(FormErrors);
   const err = errors[name]?.[0];
   return (
     <div className={cn("min-w-0", className)}>
       {label && (
         <Label htmlFor={name}>
-          {label}
+          {t(label)}
           {required && <span className="ml-0.5 text-red-500">*</span>}
         </Label>
       )}
@@ -79,17 +82,18 @@ export function Field({
             id: name, name, "aria-invalid": err ? true : undefined,
           })
         : children}
-      {err ? <p className="mt-1 text-xs text-red-600">{err}</p> : hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+      {err ? <p className="mt-1 text-xs text-red-600">{t(err)}</p> : hint ? <p className="mt-1 text-xs text-slate-500">{t(hint)}</p> : null}
     </div>
   );
 }
 
 export function SubmitButton({ children, pendingText = "Saqlanmoqda...", ...props }: ButtonProps & { pendingText?: string }) {
+  const { t } = useI18n();
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending || props.disabled} {...props}>
       {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-      {pending ? pendingText : children}
+      {pending ? t(pendingText) : children}
     </Button>
   );
 }

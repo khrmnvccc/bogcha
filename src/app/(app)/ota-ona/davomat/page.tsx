@@ -11,8 +11,12 @@ import { PageHeader, EmptyState } from "@/components/ui/misc";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { ChildSwitcher } from "@/components/child-switcher";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Davomat" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Davomat") };
+}
 
 const CELL: Record<string, string> = {
   present: "bg-mint-100 text-mint-700 ring-mint-200",
@@ -22,11 +26,12 @@ const CELL: Record<string, string> = {
 };
 
 export default async function ParentAttendance({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t, f } = await getI18n();
   const user = await requireUser(["parent"]);
   const params = await searchParams;
   const supabase = await createClient();
   const kids = await getMyChildren(supabase, user.guardianId);
-  if (!kids.length) return <div><PageHeader title="Davomat" /><Card><EmptyState title="Bog'langan bola yo'q" /></Card></div>;
+  if (!kids.length) return <div><PageHeader title={t("Davomat")} /><Card><EmptyState title={t("Bog'langan bola yo'q")} /></Card></div>;
   const child = kids.find((k) => k.id === sp(params.bola)) ?? kids[0];
   const oy = sp(params.oy);
   const month = oy && /^\d{4}-\d{2}$/.test(oy) ? `${oy}-01` : currentMonthISO();
@@ -44,30 +49,30 @@ export default async function ParentAttendance({ searchParams }: { searchParams:
 
   return (
     <div>
-      <PageHeader title="Davomat" description={child.full_name} />
+      <PageHeader title={t("Davomat")} description={child.full_name} />
       <ChildSwitcher kids={kids} active={child.id} base="/ota-ona/davomat" />
       <Card>
-        <CardHeader title={formatMonth(month)} action={<div className="flex gap-1">
-          <Link href={`/ota-ona/davomat?bola=${child.id}&oy=${prev}`} className="rounded-lg p-2 hover:bg-slate-100" aria-label="Oldingi oy"><ChevronLeft className="h-4 w-4" /></Link>
-          {next <= currentMonthISO().slice(0, 7) && <Link href={`/ota-ona/davomat?bola=${child.id}&oy=${next}`} className="rounded-lg p-2 hover:bg-slate-100" aria-label="Keyingi oy"><ChevronRight className="h-4 w-4" /></Link>}
+        <CardHeader title={f.formatMonth(month)} action={<div className="flex gap-1">
+          <Link href={`/ota-ona/davomat?bola=${child.id}&oy=${prev}`} className="rounded-lg p-2 hover:bg-slate-100" aria-label={t("Oldingi oy")}><ChevronLeft className="h-4 w-4" /></Link>
+          {next <= currentMonthISO().slice(0, 7) && <Link href={`/ota-ona/davomat?bola=${child.id}&oy=${next}`} className="rounded-lg p-2 hover:bg-slate-100" aria-label={t("Keyingi oy")}><ChevronRight className="h-4 w-4" /></Link>}
         </div>} />
         <CardBody>
           <div className="mb-4 flex flex-wrap gap-2 text-sm">
-            {counts.map(([k, n]) => <span key={k} className={cn("rounded-full px-3 py-1 ring-1", CELL[k])}>{ATTENDANCE_STATUS[k].label}: <b>{n}</b></span>)}
+            {counts.map(([k, n]) => <span key={k} className={cn("rounded-full px-3 py-1 ring-1", CELL[k])}>{t(ATTENDANCE_STATUS[k].label)}: <b>{n}</b></span>)}
           </div>
           <div className="grid grid-cols-7 gap-1.5 text-center text-xs sm:gap-2">
-            {WEEKDAYS_SHORT.map((d) => <div key={d} className="py-1 font-medium text-slate-400">{d}</div>)}
+            {f.WEEKDAYS_SHORT.map((d) => <div key={d} className="py-1 font-medium text-slate-400">{d}</div>)}
             {Array.from({ length: offset }).map((_, i) => <div key={`e${i}`} />)}
             {Array.from({ length: days }).map((_, i) => {
               const date = `${month.slice(0, 8)}${String(i + 1).padStart(2, "0")}`;
               const r = recs.get(date);
               return (
-                <div key={date} title={r ? `${ATTENDANCE_STATUS[r.status].label}${r.note ? ": " + r.note : ""}` : undefined}
+                <div key={date} title={r ? `${t(ATTENDANCE_STATUS[r.status].label)}${r.note ? ": " + r.note : ""}` : undefined}
                   className={cn("flex aspect-square flex-col items-center justify-center rounded-lg ring-1 ring-inset sm:text-sm",
                     r ? CELL[r.status] : date > today ? "text-slate-300 ring-slate-100" : "bg-slate-50 text-slate-500 ring-slate-100",
                     date === today && "outline outline-2 outline-brand-500")}>
                   <span className="font-medium">{i + 1}</span>
-                  {r && <span className="hidden text-[10px] sm:block">{ATTENDANCE_STATUS[r.status].label}</span>}
+                  {r && <span className="hidden text-[10px] sm:block">{t(ATTENDANCE_STATUS[r.status].label)}</span>}
                 </div>
               );
             })}
@@ -75,7 +80,7 @@ export default async function ParentAttendance({ searchParams }: { searchParams:
         </CardBody>
         {(data ?? []).some((r) => r.note) && (
           <div className="border-t border-slate-100 px-5 py-4">
-            <p className="mb-2 text-sm font-medium text-slate-700">Izohlar</p>
+            <p className="mb-2 text-sm font-medium text-slate-700">{t("Izohlar")}</p>
             <ul className="space-y-1 text-sm">
               {(data ?? []).filter((r) => r.note).map((r) => <li key={r.date}>{formatDate(r.date)} · <StatusBadge map={ATTENDANCE_STATUS} value={r.status} /> {r.note}</li>)}
             </ul>

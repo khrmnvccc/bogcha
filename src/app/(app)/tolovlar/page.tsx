@@ -15,8 +15,12 @@ import { LinkButton } from "@/components/ui/button";
 import { PaymentDialog } from "./payment-dialog";
 import { GenerateInvoices, AdjustmentDialog, DebtReminders } from "./tools";
 import { anyChannelConfigured } from "@/lib/integrations/dispatch";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Oylik to'lovlar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Oylik to'lovlar") };
+}
 
 type Inv = {
   id: string; child_id: string; period: string; amount_due: number; paid_total: number; balance: number; status: string; due_date: string;
@@ -24,6 +28,7 @@ type Inv = {
 };
 
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t, f } = await getI18n();
   const user = await requireUser(FINANCE_ROLES);
   const params = await searchParams;
   const supabase = await createClient();
@@ -63,8 +68,8 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
   return (
     <div>
       <PageHeader
-        title="Oylik to'lovlar"
-        description={childName ? `${childName} hisoblari` : status === "qarz" ? "Barcha qarzdorliklar" : `${formatMonth(month)} hisoblari`}
+        title={t("Oylik to'lovlar")}
+        description={childName ? t("{0} hisoblari", [childName]) : status === "qarz" ? t("Barcha qarzdorliklar") : t("{0} hisoblari", [f.formatMonth(month)])}
         actions={<>
           {!childId && status !== "qarz" && <GenerateInvoices month={month.slice(0, 7)} />}
           {!childId && <DebtReminders enabled={anyChannelConfigured()} />}
@@ -72,16 +77,16 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
         </>}
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Hisoblangan" value={formatSom(expected)} icon={<Wallet className="h-5 w-5" />} />
-        <StatCard label="Yig'ilgan" value={formatSom(collected)} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
-        <StatCard label="Qarzdorlik" value={formatSom(outstanding)} icon={<AlertCircle className="h-5 w-5" />} tone="red" />
-        <StatCard label="Yig'ish darajasi" value={rate == null ? "—" : `${rate}%`} icon={<Percent className="h-5 w-5" />} tone="amber" />
+        <StatCard label={t("Hisoblangan")} value={f.formatSom(expected)} icon={<Wallet className="h-5 w-5" />} />
+        <StatCard label={t("Yig'ilgan")} value={f.formatSom(collected)} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
+        <StatCard label={t("Qarzdorlik")} value={f.formatSom(outstanding)} icon={<AlertCircle className="h-5 w-5" />} tone="red" />
+        <StatCard label={t("Yig'ish darajasi")} value={rate == null ? "—" : `${rate}%`} icon={<Percent className="h-5 w-5" />} tone="amber" />
       </div>
-      <Notice tone="blue" className="mb-4">To&apos;lovlar qo&apos;lda qayd etiladi (naqd yoki bank o&apos;tkazmasi). Tizim onlayn to&apos;lovni qabul qilmaydi va tasdiqlamaydi.</Notice>
+      <Notice tone="blue" className="mb-4">{t("To'lovlar qo'lda qayd etiladi (naqd yoki bank o'tkazmasi). Tizim onlayn to'lovni qabul qilmaydi va tasdiqlamaydi.")}</Notice>
       <Card>
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 lg:flex-row lg:items-center lg:justify-between">
           {childId ? (
-            <Link href="/tolovlar" className="text-sm text-brand-700">← Barcha bolalar</Link>
+            <Link href="/tolovlar" className="text-sm text-brand-700">{t("← Barcha bolalar")}</Link>
           ) : (
             <FilterBar filters={[
               { type: "month", name: "oy", label: "Oy" },
@@ -92,17 +97,17 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
           )}
           {!childId && (
             <div className="flex gap-2">
-              <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar?${exportQs}&format=xlsx`} prefetch={false}><FileSpreadsheet className="h-4 w-4" /> Excel</LinkButton>
-              <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar?${exportQs}&format=pdf`} prefetch={false}><FileText className="h-4 w-4" /> PDF</LinkButton>
+              <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar?${exportQs}&format=xlsx`} prefetch={false}><FileSpreadsheet className="h-4 w-4" />{" "}{t("Excel")}</LinkButton>
+              <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar?${exportQs}&format=pdf`} prefetch={false}><FileText className="h-4 w-4" />{" "}{t("PDF")}</LinkButton>
             </div>
           )}
         </div>
         {rows.length === 0 ? (
-          <EmptyState title="Hisoblar topilmadi" description={!childId && status !== "qarz" ? "Bu oy uchun hali hisoblar yaratilmagan bo'lishi mumkin. \"Hisoblarni yaratish\" tugmasini bosing." : undefined} />
+          <EmptyState title={t("Hisoblar topilmadi")} description={!childId && status !== "qarz" ? t("Bu oy uchun hali hisoblar yaratilmagan bo'lishi mumkin. \"Hisoblarni yaratish\" tugmasini bosing.") : undefined} />
         ) : (
           <Table>
             <THead>
-              <tr><TH>Bola</TH>{(childId || status === "qarz") && <TH>Oy</TH>}<TH className="text-right">Hisoblangan</TH><TH className="text-right">To&apos;langan</TH><TH className="text-right">Qoldiq</TH><TH>Holat</TH><TH>Muddat</TH><TH className="text-right">Amallar</TH></tr>
+              <tr><TH>{t("Bola")}</TH>{(childId || status === "qarz") && <TH>{t("Oy")}</TH>}<TH className="text-right">{t("Hisoblangan")}</TH><TH className="text-right">{t("To'langan")}</TH><TH className="text-right">{t("Qoldiq")}</TH><TH>{t("Holat")}</TH><TH>{t("Muddat")}</TH><TH className="text-right">{t("Amallar")}</TH></tr>
             </THead>
             <tbody>
               {rows.map((r) => {
@@ -111,19 +116,19 @@ export default async function InvoicesPage({ searchParams }: { searchParams: Pro
                   <TR key={r.id}>
                     <TD>
                       <Link href={`/tolovlar/hisob/${r.id}`} className="font-medium text-slate-900 hover:text-brand-700">{r.children?.full_name}</Link>
-                      <p className="text-xs text-slate-500">{r.children?.kg_groups?.name ?? "Guruhsiz"}</p>
+                      <p className="text-xs text-slate-500">{r.children?.kg_groups?.name ?? t("Guruhsiz")}</p>
                     </TD>
-                    {(childId || status === "qarz") && <TD className="whitespace-nowrap">{formatMonth(r.period)}</TD>}
+                    {(childId || status === "qarz") && <TD className="whitespace-nowrap">{f.formatMonth(r.period)}</TD>}
                     <TD className="whitespace-nowrap text-right">
-                      {formatSom(r.amount_due)}
-                      {Number(r.adjustments_total) !== 0 && <p className="text-xs text-slate-400">tuzatish: {formatSom(r.adjustments_total, { signed: true })}</p>}
+                      {f.formatSom(r.amount_due)}
+                      {Number(r.adjustments_total) !== 0 && <p className="text-xs text-slate-400">{t("tuzatish:")}{" "}{f.formatSom(r.adjustments_total, { signed: true })}</p>}
                     </TD>
-                    <TD className="whitespace-nowrap text-right text-mint-700">{formatSom(r.paid_total)}</TD>
+                    <TD className="whitespace-nowrap text-right text-mint-700">{f.formatSom(r.paid_total)}</TD>
                     <TD className="whitespace-nowrap text-right font-semibold">
-                      {r.balance < 0 ? <span className="text-brand-700" title="Ortiqcha to'langan">{formatSom(-r.balance)} ortiqcha</span> : formatSom(r.balance)}
+                      {r.balance < 0 ? <span className="text-brand-700" title={t("Ortiqcha to'langan")}>{f.formatSom(-r.balance)}{" "}{t("ortiqcha")}</span> : f.formatSom(r.balance)}
                     </TD>
                     <TD><StatusBadge map={INVOICE_STATUS} value={r.status} /></TD>
-                    <TD className="whitespace-nowrap">{formatDate(r.due_date)}{overdue && <Badge tone="red" className="ml-1">muddati o&apos;tgan</Badge>}</TD>
+                    <TD className="whitespace-nowrap">{formatDate(r.due_date)}{overdue && <Badge tone="red" className="ml-1">{t("muddati o'tgan")}</Badge>}</TD>
                     <TD className="whitespace-nowrap text-right">
                       <div className="flex justify-end gap-1">
                         {r.balance > 0 && <PaymentDialog compact kids={kidOptions} preset={{ childId: r.child_id, month: r.period }} balance={Number(r.balance)} />}

@@ -46,3 +46,44 @@ input[type="month"]::-webkit-calendar-picker-indicator {
   .no-print { display: none !important; }
   body { background: white; }
 }
+
+/* Phones: data tables become stacked cards (labels come from the column titles). */
+@media (max-width: 639.98px) {
+  .rtable thead { display: none; }
+  .rtable tbody tr { display: block; padding: 0.75rem 1rem; }
+  .rtable tbody tr:hover { background: transparent; }
+  .rtable tbody td {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    padding: 0.2rem 0; text-align: right; white-space: normal; min-height: 1.75rem;
+  }
+  .rtable tbody td::before {
+    content: attr(data-label); flex-shrink: 0; max-width: 45%;
+    color: #64748b; font-size: 0.75rem; text-align: left;
+  }
+  .rtable tbody td[data-label=""]::before { content: none; }
+  .rtable tbody td[data-label=""] { justify-content: flex-end; }
+  .rtable tbody td:first-child { display: block; text-align: left; padding-bottom: 0.35rem; }
+  .rtable tbody td:first-child::before { content: none; }
+  .rtable tbody td[colspan] { display: block; text-align: center; }
+  .rtable tbody td[colspan]::before { content: none; }
+  .rtable tbody td:empty { display: none; }
+  .rtable tbody td > * { min-width: 0; }
+  /* Action buttons get a full row at the bottom of the card. */
+  .rtable tbody td:last-child:not(:first-child) { padding-top: 0.5rem; }
+}
+
+/* Page header buttons share the row evenly on phones. */
+@media (max-width: 639.98px) {
+  .page-actions { width: 100%; }
+  .page-actions > * { flex: 1 1 auto; }
+}
+
+/* Leave room for the bottom navigation bar on phones. */
+@media (max-width: 1023.98px) {
+  .has-bottom-nav { padding-bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
+}
+
+/* Desktop tables: keep the first (name) column readable. */
+@media (min-width: 640px) {
+  .rtable tbody td:first-child { min-width: 11rem; }
+}

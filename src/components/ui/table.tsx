@@ -1,11 +1,20 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { ResponsiveTable } from "./responsive-table";
 
-export function Table({ className, children }: { className?: string; children: React.ReactNode }) {
+/** Data table; on phones rows turn into cards unless `stack` is false (then it scrolls sideways). */
+export function Table({ className, children, stack = true }: { className?: string; children: React.ReactNode; stack?: boolean }) {
+  if (!stack) {
+    return (
+      <div className={cn("w-full overflow-x-auto", className)}>
+        <table className="w-full min-w-[640px] border-collapse text-sm">{children}</table>
+      </div>
+    );
+  }
   return (
-    <div className={cn("w-full overflow-x-auto", className)}>
-      <table className="w-full min-w-[640px] border-collapse text-sm">{children}</table>
-    </div>
+    <ResponsiveTable className={cn("rtable w-full sm:overflow-x-auto", className)}>
+      <table className="w-full border-collapse text-sm sm:min-w-[640px]">{children}</table>
+    </ResponsiveTable>
   );
 }
 

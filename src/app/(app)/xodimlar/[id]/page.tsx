@@ -14,10 +14,15 @@ import { suggestUsername } from "@/lib/accounts";
 import { AccountActions } from "@/components/account-actions";
 import { EditEmployee, EmployeeGroupsForm, CreateAccountForm } from "./client";
 import { resetPassword, setUserActive } from "../actions";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Xodim" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Xodim") };
+}
 
 export default async function EmployeePage({ params }: { params: Promise<{ id: string }> }) {
+  const { t, f } = await getI18n();
   const user = await requireUser(ADMIN_ROLES);
   const { id } = await params;
   const supabase = await createClient();
@@ -43,43 +48,43 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
   return (
     <div>
       <PageHeader title={e.full_name} description={e.position} back={{ href: "/xodimlar", label: "Xodimlar" }}
-        actions={<LinkButton variant="outline" href={`/ishga-kelish?xodim=${e.id}&dan=${month}`}>Davomat tarixi</LinkButton>} />
+        actions={<LinkButton variant="outline" href={`/ishga-kelish?xodim=${e.id}&dan=${month}`}>{t("Davomat tarixi")}</LinkButton>} />
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card>
-            <CardHeader title="Ma'lumotlar" action={<EditEmployee employee={e} defaults={{ start: settings.work_start.slice(0, 5), end: settings.work_end.slice(0, 5), days: settings.work_days }} />} />
+            <CardHeader title={t("Ma'lumotlar")} action={<EditEmployee employee={e} defaults={{ start: settings.work_start.slice(0, 5), end: settings.work_end.slice(0, 5), days: settings.work_days }} />} />
             <CardBody>
               <dl className="divide-y divide-slate-100">
-                <InfoRow label="Telefon">{e.phone ?? "—"}</InfoRow>
-                <InfoRow label="Holati"><StatusBadge map={EMPLOYMENT_STATUS} value={e.status} /></InfoRow>
-                <InfoRow label="Ishga kirgan">{formatDate(e.start_date)}</InfoRow>
-                {e.end_date && <InfoRow label="Ishdan ketgan">{formatDate(e.end_date)}</InfoRow>}
-                <InfoRow label="Ish vaqti">
+                <InfoRow label={t("Telefon")}>{e.phone ?? "—"}</InfoRow>
+                <InfoRow label={t("Holati")}><StatusBadge map={EMPLOYMENT_STATUS} value={e.status} /></InfoRow>
+                <InfoRow label={t("Ishga kirgan")}>{formatDate(e.start_date)}</InfoRow>
+                {e.end_date && <InfoRow label={t("Ishdan ketgan")}>{formatDate(e.end_date)}</InfoRow>}
+                <InfoRow label={t("Ish vaqti")}>
                   {(e.schedule_start ?? settings.work_start).slice(0, 5)} – {(e.schedule_end ?? settings.work_end).slice(0, 5)}
-                  {!e.schedule_start && !e.schedule_end && <span className="ml-1 text-xs text-slate-400">(umumiy)</span>}
+                  {!e.schedule_start && !e.schedule_end && <span className="ml-1 text-xs text-slate-400">{t("(umumiy)")}</span>}
                 </InfoRow>
-                {e.notes && <InfoRow label="Izoh">{e.notes}</InfoRow>}
+                {e.notes && <InfoRow label={t("Izoh")}>{e.notes}</InfoRow>}
               </dl>
             </CardBody>
           </Card>
 
           <Card>
-            <CardHeader title={`${formatMonth(month)} davomati`} description={`Jami: ${formatMinutes(totalMin)} · Kechikish: ${lateCount} · Ketish belgilanmagan: ${missing}`} />
-            {records.length === 0 ? <EmptyState title="Bu oyda yozuvlar yo'q" /> : (
+            <CardHeader title={t("{0} davomati", [f.formatMonth(month)])} description={t("Jami: {0} · Kechikish: {1} · Ketish belgilanmagan: {2}", [f.formatMinutes(totalMin), lateCount, missing])} />
+            {records.length === 0 ? <EmptyState title={t("Bu oyda yozuvlar yo'q")} /> : (
               <Table>
-                <THead><tr><TH>Sana</TH><TH>Keldi</TH><TH>Ketdi</TH><TH>Ishladi</TH><TH>Usul</TH><TH>Belgilar</TH></tr></THead>
+                <THead><tr><TH>{t("Sana")}</TH><TH>{t("Keldi")}</TH><TH>{t("Ketdi")}</TH><TH>{t("Ishladi")}</TH><TH>{t("Usul")}</TH><TH>{t("Belgilar")}</TH></tr></THead>
                 <tbody>
                   {records.map((r) => (
                     <TR key={r.id}>
                       <TD>{formatDate(r.work_date)}</TD>
                       <TD>{formatTime(r.check_in_at)}</TD>
-                      <TD>{r.check_out_at ? formatTime(r.check_out_at) : <Badge tone="amber">belgilanmagan</Badge>}</TD>
-                      <TD>{formatMinutes(r.worked_minutes)}</TD>
-                      <TD><Badge tone={ATTENDANCE_SOURCE[r.check_in_source]?.tone} title={ATTENDANCE_SOURCE[r.check_in_source]?.hint}>{ATTENDANCE_SOURCE[r.check_in_source]?.label}</Badge></TD>
+                      <TD>{r.check_out_at ? formatTime(r.check_out_at) : <Badge tone="amber">{t("belgilanmagan")}</Badge>}</TD>
+                      <TD>{f.formatMinutes(r.worked_minutes)}</TD>
+                      <TD><Badge tone={ATTENDANCE_SOURCE[r.check_in_source]?.tone} title={t(ATTENDANCE_SOURCE[r.check_in_source]?.hint ?? "")}>{t(ATTENDANCE_SOURCE[r.check_in_source]?.label ?? "")}</Badge></TD>
                       <TD className="space-x-1">
-                        {r.late_minutes > 0 && <Badge tone="amber">{r.late_minutes} daq kechikdi</Badge>}
-                        {r.early_leave_minutes > 0 && <Badge tone="amber">{r.early_leave_minutes} daq erta ketdi</Badge>}
-                        {r.is_corrected && <Badge tone="violet">tuzatilgan</Badge>}
+                        {r.late_minutes > 0 && <Badge tone="amber">{r.late_minutes}{" "}{t("daq kechikdi")}</Badge>}
+                        {r.early_leave_minutes > 0 && <Badge tone="amber">{r.early_leave_minutes}{" "}{t("daq erta ketdi")}</Badge>}
+                        {r.is_corrected && <Badge tone="violet">{t("tuzatilgan")}</Badge>}
                       </TD>
                     </TR>
                   ))}
@@ -91,15 +96,15 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
 
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Tizim hisobi" />
+            <CardHeader title={t("Tizim hisobi")} />
             <CardBody className="space-y-4">
               {profile ? (
                 <>
                   <dl className="divide-y divide-slate-100">
-                    <InfoRow label="Login"><span className="font-mono">{profile.username}</span></InfoRow>
-                    <InfoRow label="Roli">{ROLE_LABELS[profile.role]}</InfoRow>
-                    <InfoRow label="Holati">{profile.is_active ? <Badge tone="green">Faol</Badge> : <Badge tone="red">Bloklangan</Badge>}</InfoRow>
-                    {profile.must_change_password && <InfoRow label="Parol"><Badge tone="amber">Hali almashtirilmagan</Badge></InfoRow>}
+                    <InfoRow label={t("Login")}><span className="font-mono">{profile.username}</span></InfoRow>
+                    <InfoRow label={t("Roli")}>{t(ROLE_LABELS[profile.role])}</InfoRow>
+                    <InfoRow label={t("Holati")}>{profile.is_active ? <Badge tone="green">{t("Faol")}</Badge> : <Badge tone="red">{t("Bloklangan")}</Badge>}</InfoRow>
+                    {profile.must_change_password && <InfoRow label={t("Parol")}><Badge tone="amber">{t("Hali almashtirilmagan")}</Badge></InfoRow>}
                   </dl>
                   {canManageAccount && <AccountActions profileId={profile.id} isActive={profile.is_active} resetAction={resetPassword} activeAction={setUserActive} />}
                 </>
@@ -109,12 +114,12 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="Biriktirilgan guruhlar" />
+            <CardHeader title={t("Biriktirilgan guruhlar")} />
             <CardBody>
               <EmployeeGroupsForm employeeId={e.id} groups={groups ?? []} selected={selectedGroups} />
             </CardBody>
           </Card>
-          <p className="px-1 text-xs text-slate-400">Yaratilgan: {formatDateTime(e.created_at)}</p>
+          <p className="px-1 text-xs text-slate-400">{t("Yaratilgan:")}{" "}{formatDateTime(e.created_at)}</p>
         </div>
       </div>
     </div>

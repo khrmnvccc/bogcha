@@ -5,8 +5,10 @@ import { navFor } from "@/lib/nav";
 import { ROLE_LABELS } from "@/lib/labels";
 import { AppShell } from "@/components/layout/app-shell";
 import { signOut } from "@/app/auth-actions";
+import { getI18n } from "@/lib/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const { t } = await getI18n();
   const user = await requireUser();
   if (user.profile.must_change_password) redirect("/parol-almashtirish");
 
@@ -19,8 +21,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <AppShell
       nav={navFor(user)}
-      user={{ name: user.profile.full_name || user.profile.username || "Foydalanuvchi", roleLabel: ROLE_LABELS[user.profile.role] }}
-      orgName={settings?.kindergarten_name ?? "Bog'cha"}
+      user={{ name: user.profile.full_name || user.profile.username || t("Foydalanuvchi"), roleLabel: t(ROLE_LABELS[user.profile.role]) }}
+      orgName={settings?.kindergarten_name ?? t("Bog'cha")}
       unread={count ?? 0}
       signOut={signOut}
     >

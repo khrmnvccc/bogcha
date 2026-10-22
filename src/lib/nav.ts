@@ -1,6 +1,6 @@
 import type { CurrentUser } from "@/lib/auth";
 
-export type NavItem = { href: string; label: string; icon: string };
+export type NavItem = { href: string; label: string; icon: string; short?: string };
 export type NavSection = { title?: string; items: NavItem[] };
 
 export function navFor(user: CurrentUser): NavSection[] {
@@ -15,7 +15,7 @@ export function navFor(user: CurrentUser): NavSection[] {
         { href: "/ota-ona/davomat", label: "Davomat", icon: "calendar-check" },
         { href: "/ota-ona/tolovlar", label: "To'lovlar", icon: "wallet" },
         { href: "/elonlar", label: "E'lonlar", icon: "megaphone" },
-        { href: "/ota-ona/aloqa", label: "Bog'cha bilan aloqa", icon: "phone" },
+        { href: "/ota-ona/aloqa", label: "Bog'cha bilan aloqa", icon: "phone", short: "Aloqa" },
       ],
     }];
   }
@@ -23,10 +23,10 @@ export function navFor(user: CurrentUser): NavSection[] {
   if (role === "teacher") {
     const items: NavItem[] = [
       { href: "/mening-kunim", label: "Mening kunim", icon: "sun" },
-      { href: "/ishga-kelish", label: "Ishga kelish-ketish", icon: "clock" },
+      { href: "/ishga-kelish", label: "Ishga kelish-ketish", icon: "clock", short: "Kelish-ketish" },
       { href: "/guruhlar", label: "Guruhlarim", icon: "layers" },
       { href: "/bolalar", label: "Bolalar", icon: "baby" },
-      { href: "/davomat", label: "Bolalar davomati", icon: "calendar-check" },
+      { href: "/davomat", label: "Bolalar davomati", icon: "calendar-check", short: "Davomat" },
       { href: "/elonlar", label: "E'lonlar", icon: "megaphone" },
     ];
     if (perms.includes("finance.view")) items.push({ href: "/hisobotlar", label: "Hisobotlar", icon: "file-chart" });
@@ -34,15 +34,15 @@ export function navFor(user: CurrentUser): NavSection[] {
   }
 
   if (role === "accountant") {
-    const items: NavItem[] = [{ href: "/panel", label: "Boshqaruv paneli", icon: "layout" }];
+    const items: NavItem[] = [{ href: "/panel", label: "Boshqaruv paneli", icon: "layout", short: "Panel" }];
     if (isEmployee) items.push({ href: "/mening-kunim", label: "Mening kunim", icon: "sun" });
     return [
       { items },
       {
         title: "Moliya",
         items: [
-          { href: "/tolovlar", label: "Oylik to'lovlar", icon: "wallet" },
-          { href: "/tolovlar-tarixi", label: "To'lovlar tarixi", icon: "receipt" },
+          { href: "/tolovlar", label: "Oylik to'lovlar", icon: "wallet", short: "To'lovlar" },
+          { href: "/tolovlar-tarixi", label: "To'lovlar tarixi", icon: "receipt", short: "Tarix" },
           { href: "/hisobotlar", label: "Hisobotlar", icon: "file-chart" },
         ],
       },
@@ -57,7 +57,7 @@ export function navFor(user: CurrentUser): NavSection[] {
   }
 
   // director / admin
-  const top: NavItem[] = [{ href: "/panel", label: "Boshqaruv paneli", icon: "layout" }];
+  const top: NavItem[] = [{ href: "/panel", label: "Boshqaruv paneli", icon: "layout", short: "Panel" }];
   if (isEmployee) top.push({ href: "/mening-kunim", label: "Mening kunim", icon: "sun" });
   return [
     { items: top },
@@ -65,7 +65,7 @@ export function navFor(user: CurrentUser): NavSection[] {
       title: "Xodimlar",
       items: [
         { href: "/xodimlar", label: "Xodimlar", icon: "users" },
-        { href: "/ishga-kelish", label: "Ishga kelish-ketish", icon: "clock" },
+        { href: "/ishga-kelish", label: "Ishga kelish-ketish", icon: "clock", short: "Kelish-ketish" },
       ],
     },
     {
@@ -73,14 +73,14 @@ export function navFor(user: CurrentUser): NavSection[] {
       items: [
         { href: "/bolalar", label: "Bolalar", icon: "baby" },
         { href: "/guruhlar", label: "Guruhlar", icon: "layers" },
-        { href: "/davomat", label: "Bolalar davomati", icon: "calendar-check" },
+        { href: "/davomat", label: "Bolalar davomati", icon: "calendar-check", short: "Davomat" },
       ],
     },
     {
       title: "Moliya",
       items: [
-        { href: "/tolovlar", label: "Oylik to'lovlar", icon: "wallet" },
-        { href: "/tolovlar-tarixi", label: "To'lovlar tarixi", icon: "receipt" },
+        { href: "/tolovlar", label: "Oylik to'lovlar", icon: "wallet", short: "To'lovlar" },
+        { href: "/tolovlar-tarixi", label: "To'lovlar tarixi", icon: "receipt", short: "Tarix" },
         { href: "/hisobotlar", label: "Hisobotlar", icon: "file-chart" },
       ],
     },

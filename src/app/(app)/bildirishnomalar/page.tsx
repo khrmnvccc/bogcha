@@ -8,20 +8,25 @@ import { cn } from "@/lib/utils";
 import { PageHeader, EmptyState } from "@/components/ui/misc";
 import { Card } from "@/components/ui/card";
 import { MarkAllRead } from "./mark-all";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Bildirishnomalar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Bildirishnomalar") };
+}
 const ICON = { announcement: Megaphone, payment: Wallet, invoice: Wallet, account: User } as Record<string, typeof Bell>;
 
 export default async function NotificationsPage() {
+  const { t } = await getI18n();
   await requireUser();
   const supabase = await createClient();
   const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(100);
   const unread = (data ?? []).filter((n) => !n.is_read).length;
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader title="Bildirishnomalar" description={unread ? `${unread} ta o'qilmagan` : "Hammasi o'qilgan"} actions={unread > 0 && <MarkAllRead />} />
+      <PageHeader title={t("Bildirishnomalar")} description={unread ? t("{0} ta o'qilmagan", [unread]) : t("Hammasi o'qilgan")} actions={unread > 0 && <MarkAllRead />} />
       <Card>
-        {(data ?? []).length === 0 ? <EmptyState title="Bildirishnomalar yo'q" icon={<Bell className="h-6 w-6" />} /> : (
+        {(data ?? []).length === 0 ? <EmptyState title={t("Bildirishnomalar yo'q")} icon={<Bell className="h-6 w-6" />} /> : (
           <ul className="divide-y divide-slate-100">
             {(data ?? []).map((n) => {
               const Icon = ICON[n.kind] ?? Bell;

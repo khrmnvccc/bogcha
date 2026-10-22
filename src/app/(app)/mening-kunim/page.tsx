@@ -11,10 +11,15 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/button";
 import { CheckWidget } from "@/components/check-widget";
 import { checkIn, checkOut } from "../ishga-kelish/actions";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Mening kunim" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Mening kunim") };
+}
 
 export default async function MyDayPage() {
+  const { t, f } = await getI18n();
   const user = await requireUser(STAFF_ROLES);
   const supabase = await createClient();
   const today = todayISO();
@@ -41,25 +46,25 @@ export default async function MyDayPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={`Assalomu alaykum, ${user.profile.full_name.split(" ")[1] ?? user.profile.full_name}!`} description={`${weekdayName(today)}, ${formatDateLong(today)}`} />
+      <PageHeader title={t("Assalomu alaykum, {0}!", [user.profile.full_name.split(" ")[1] ?? user.profile.full_name])} description={`${f.weekdayName(today)}, ${f.formatDateLong(today)}`} />
       <TelegramPrompt linkedAt={user.profile.telegram_linked_at} />
       {user.employeeId ? (
         <CheckWidget record={rec} schedule={schedule} checkIn={checkIn} checkOut={checkOut}
           locationEnabled={settings.location_lat != null && settings.location_lng != null} />
       ) : (
-        <Notice tone="amber">Hisobingiz xodim kartasiga bog&apos;lanmagan, shuning uchun ishga kelish-ketishni belgilay olmaysiz.</Notice>
+        <Notice tone="amber">{t("Hisobingiz xodim kartasiga bog'lanmagan, shuning uchun ishga kelish-ketishni belgilay olmaysiz.")}</Notice>
       )}
 
       {birthdays.length > 0 && (
         <Notice tone="green" className="flex items-center gap-2">
-          <Cake className="h-4 w-4" /> Bugun tug&apos;ilgan kun: {birthdays.map((b) => b.full_name).join(", ")} 🎉
+          <Cake className="h-4 w-4" />{" "}{t("Bugun tug'ilgan kun:")}{" "}{birthdays.map((b) => b.full_name).join(", ")} 🎉
         </Notice>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title="Guruhlarim" description="Bugungi davomat holati" action={<LinkButton href="/davomat" size="sm"><CalendarCheck className="h-4 w-4" /> Davomat belgilash</LinkButton>} />
-          {myGroups.length === 0 ? <EmptyState title="Sizga hali guruh biriktirilmagan" /> : (
+          <CardHeader title={t("Guruhlarim")} description={t("Bugungi davomat holati")} action={<LinkButton href="/davomat" size="sm"><CalendarCheck className="h-4 w-4" />{" "}{t("Davomat belgilash")}</LinkButton>} />
+          {myGroups.length === 0 ? <EmptyState title={t("Sizga hali guruh biriktirilmagan")} /> : (
             <ul className="divide-y divide-slate-100">
               {myGroups.map((g) => {
                 const active = g.children.filter((c) => c.status === "active");
@@ -71,12 +76,12 @@ export default async function MyDayPage() {
                     <Link href={`/davomat?guruh=${g.id}`} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50">
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-slate-900">{g.name}{g.room && <span className="ml-2 text-xs text-slate-400">{g.room}</span>}</p>
-                        <p className="text-sm text-slate-500">{active.length} bola · bugun kelgan: {present}</p>
+                        <p className="text-sm text-slate-500">{active.length}{" "}{t("bola · bugun kelgan:")}{" "}{present}</p>
                         <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-slate-100">
                           <div className="h-full rounded-full bg-mint-500" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
-                      <span className="text-sm text-slate-500">{done}/{active.length} belgilangan</span>
+                      <span className="text-sm text-slate-500">{done}/{active.length}{" "}{t("belgilangan")}</span>
                       <ChevronRight className="h-4 w-4 text-slate-400" />
                     </Link>
                   </li>
@@ -86,9 +91,9 @@ export default async function MyDayPage() {
           )}
         </Card>
         <Card>
-          <CardHeader title="E'lonlar" action={<Link href="/elonlar" className="text-sm text-brand-700">Barchasi</Link>} />
+          <CardHeader title={t("E'lonlar")} action={<Link href="/elonlar" className="text-sm text-brand-700">{t("Barchasi")}</Link>} />
           <CardBody className="space-y-4">
-            {(news ?? []).length === 0 ? <p className="text-sm text-slate-500">Yangi e&apos;lonlar yo&apos;q</p> : (news ?? []).map((n) => (
+            {(news ?? []).length === 0 ? <p className="text-sm text-slate-500">{t("Yangi e'lonlar yo'q")}</p> : (news ?? []).map((n) => (
               <div key={n.id} className="flex gap-3">
                 <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
                 <div className="min-w-0">

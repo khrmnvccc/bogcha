@@ -13,8 +13,12 @@ import { ConfirmAction } from "@/components/ui/dialog";
 import { GroupForm } from "./group-form";
 import { setGroupActive } from "./actions";
 import { sp } from "@/lib/utils";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Guruhlar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Guruhlar") };
+}
 
 type G = {
   id: string; name: string; age_range: string | null; room: string | null; capacity: number | null; monthly_fee: number | null;
@@ -24,6 +28,7 @@ type G = {
 };
 
 export default async function GroupsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t, f } = await getI18n();
   const user = await requireUser(STAFF_ROLES);
   const isAdmin = ADMIN_ROLES.includes(user.profile.role);
   const showArchived = sp((await searchParams).arxiv) === "1";
@@ -47,15 +52,15 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
   return (
     <div>
       <PageHeader
-        title={user.profile.role === "teacher" ? "Guruhlarim" : "Guruhlar"}
-        description={showArchived ? "Arxivlangan guruhlar" : "Guruhlar, xonalar va biriktirilgan tarbiyachilar"}
+        title={user.profile.role === "teacher" ? t("Guruhlarim") : t("Guruhlar")}
+        description={showArchived ? t("Arxivlangan guruhlar") : t("Guruhlar, xonalar va biriktirilgan tarbiyachilar")}
         actions={isAdmin && <>
-          <Link href={showArchived ? "/guruhlar" : "/guruhlar?arxiv=1"} className="text-sm text-slate-500 hover:text-brand-700">{showArchived ? "Faol guruhlar" : "Arxiv"}</Link>
-          <GroupForm teachers={teachers ?? []} periods={periods ?? []} defaultFee={formatSom(settings.default_monthly_fee)} />
+          <Link href={showArchived ? "/guruhlar" : "/guruhlar?arxiv=1"} className="text-sm text-slate-500 hover:text-brand-700">{showArchived ? t("Faol guruhlar") : t("Arxiv")}</Link>
+          <GroupForm teachers={teachers ?? []} periods={periods ?? []} defaultFee={f.formatSom(settings.default_monthly_fee)} />
         </>}
       />
       {groups.length === 0 ? (
-        <Card><EmptyState title={showArchived ? "Arxivda guruh yo'q" : "Guruhlar yo'q"} description={isAdmin ? "Yangi guruh yarating" : "Sizga hali guruh biriktirilmagan"} /></Card>
+        <Card><EmptyState title={showArchived ? t("Arxivda guruh yo'q") : t("Guruhlar yo'q")} description={isAdmin ? t("Yangi guruh yarating") : t("Sizga hali guruh biriktirilmagan")} /></Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {groups.map((g) => {
@@ -68,25 +73,25 @@ export default async function GroupsPage({ searchParams }: { searchParams: Promi
                     <Link href={`/guruhlar/${g.id}`} className="text-lg font-semibold text-slate-900 hover:text-brand-700">{g.name}</Link>
                     {g.age_range && <p className="text-sm text-slate-500">{g.age_range}</p>}
                   </div>
-                  <Badge tone={full ? "amber" : "blue"}>{active}{g.capacity ? ` / ${g.capacity}` : ""} bola</Badge>
+                  <Badge tone={full ? "amber" : "blue"}>{active}{g.capacity ? ` / ${g.capacity}` : ""}{" "}{t("bola")}</Badge>
                 </div>
                 <div className="flex-1 space-y-2 px-5 pb-4 text-sm text-slate-600">
-                  <p className="flex items-center gap-2"><DoorOpen className="h-4 w-4 text-slate-400" /> {g.room ?? "Xona ko'rsatilmagan"}</p>
-                  <p className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /> {g.group_teachers.map((t) => t.employees?.full_name).filter(Boolean).join(", ") || "Tarbiyachi biriktirilmagan"}</p>
+                  <p className="flex items-center gap-2"><DoorOpen className="h-4 w-4 text-slate-400" /> {g.room ?? t("Xona ko'rsatilmagan")}</p>
+                  <p className="flex items-center gap-2"><Users className="h-4 w-4 text-slate-400" /> {g.group_teachers.map((t) => t.employees?.full_name).filter(Boolean).join(", ") || t("Tarbiyachi biriktirilmagan")}</p>
                   {user.profile.role !== "teacher" && (
-                    <p className="flex items-center gap-2"><Wallet className="h-4 w-4 text-slate-400" /> {formatSom(g.monthly_fee ?? settings.default_monthly_fee)}{g.monthly_fee == null && <span className="text-xs text-slate-400">(umumiy)</span>}</p>
+                    <p className="flex items-center gap-2"><Wallet className="h-4 w-4 text-slate-400" /> {f.formatSom(g.monthly_fee ?? settings.default_monthly_fee)}{g.monthly_fee == null && <span className="text-xs text-slate-400">{t("(umumiy)")}</span>}</p>
                   )}
                 </div>
                 {isAdmin && (
                   <div className="flex justify-end gap-1 border-t border-slate-100 px-3 py-2">
-                    <GroupForm teachers={teachers ?? []} periods={periods ?? []} defaultFee={formatSom(settings.default_monthly_fee)}
+                    <GroupForm teachers={teachers ?? []} periods={periods ?? []} defaultFee={f.formatSom(settings.default_monthly_fee)}
                       group={{ ...g, teacher_ids: g.group_teachers.map((t) => t.employee_id) }} />
                     <ConfirmAction
-                      trigger={<Button variant="ghost" size="sm">{g.is_active ? <><Archive className="h-4 w-4" /> Arxivlash</> : <><RotateCcw className="h-4 w-4" /> Tiklash</>}</Button>}
-                      title={g.is_active ? "Guruhni arxivlaysizmi?" : "Guruhni tiklaysizmi?"}
-                      description={g.is_active ? "Arxivlangan guruh ro'yxatlarda ko'rinmaydi. Tarix saqlanib qoladi." : "Guruh yana faol bo'ladi."}
+                      trigger={<Button variant="ghost" size="sm">{g.is_active ? <><Archive className="h-4 w-4" />{" "}{t("Arxivlash")}</> : <><RotateCcw className="h-4 w-4" />{" "}{t("Tiklash")}</>}</Button>}
+                      title={g.is_active ? t("Guruhni arxivlaysizmi?") : t("Guruhni tiklaysizmi?")}
+                      description={g.is_active ? t("Arxivlangan guruh ro'yxatlarda ko'rinmaydi. Tarix saqlanib qoladi.") : t("Guruh yana faol bo'ladi.")}
                       action={setGroupActive} hidden={{ id: g.id, active: String(!g.is_active) }} danger={g.is_active}
-                      confirmText={g.is_active ? "Arxivlash" : "Tiklash"}
+                      confirmText={g.is_active ? t("Arxivlash") : t("Tiklash")}
                     />
                   </div>
                 )}

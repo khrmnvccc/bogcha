@@ -9,6 +9,7 @@ import { Notice } from "@/components/ui/misc";
 import { ATTENDANCE_STATUS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { saveChildAttendance } from "./actions";
+import { useI18n } from "@/lib/i18n/client";
 
 type Status = "present" | "absent" | "late" | "excused";
 type Child = { id: string; full_name: string; status?: Status; note?: string | null; recorded_by?: string | null; updated_at?: string | null };
@@ -24,6 +25,7 @@ const ORDER: Status[] = ["present", "late", "absent", "excused"];
 export function AttendanceSheet({ date, kids: children, editable, needsReason, lockedReason }: {
   date: string; kids: Child[]; editable: boolean; needsReason: boolean; lockedReason?: string;
 }) {
+  const { t } = useI18n();
   const initial = React.useMemo(() => Object.fromEntries(children.map((c) => [c.id, { status: c.status, note: c.note ?? "" }])), [children]);
   const [state, setState] = React.useState<Record<string, { status?: Status; note: string }>>(initial);
   const [notesOpen, setNotesOpen] = React.useState<Record<string, boolean>>({});
@@ -57,10 +59,10 @@ export function AttendanceSheet({ date, kids: children, editable, needsReason, l
     const res = await saveChildAttendance({}, fd);
     setSaving(false);
     if (res.ok) {
-      toast.success(res.message);
+      toast.success(t(res.message ?? ""));
       setReason("");
       router.refresh();
-    } else toast.error(res.message);
+    } else toast.error(t(res.message ?? ""));
   }
 
   return (
@@ -69,12 +71,12 @@ export function AttendanceSheet({ date, kids: children, editable, needsReason, l
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
         <div className="flex flex-wrap gap-2 text-sm">
           {counts.map(([s, n]) => (
-            <span key={s} className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{ATTENDANCE_STATUS[s].label}: <b>{n}</b></span>
+            <span key={s} className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{t(ATTENDANCE_STATUS[s].label)}: <b>{n}</b></span>
           ))}
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-500">Belgilanmagan: <b>{unmarked}</b></span>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-500">{t("Belgilanmagan:")}{" "}<b>{unmarked}</b></span>
         </div>
         {editable && unmarked > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllPresent}><CheckCheck className="h-4 w-4" /> Qolganlarni &quot;Keldi&quot;</Button>
+          <Button variant="outline" size="sm" onClick={markAllPresent}><CheckCheck className="h-4 w-4" />{" "}{t("Qolganlarni \"Keldi\"")}</Button>
         )}
       </div>
       <ul className="divide-y divide-slate-100">
@@ -87,27 +89,27 @@ export function AttendanceSheet({ date, kids: children, editable, needsReason, l
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="w-6 shrink-0 text-right text-xs text-slate-400">{idx + 1}</span>
                   <span className="truncate font-medium text-slate-900">{c.full_name}</span>
-                  {dirty && <span className="h-2 w-2 shrink-0 rounded-full bg-brand-500" title="Saqlanmagan" />}
+                  {dirty && <span className="h-2 w-2 shrink-0 rounded-full bg-brand-500" title={t("Saqlanmagan")} />}
                 </div>
                 <div className="grid grid-cols-4 gap-1.5 md:flex">
                   {ORDER.map((s) => (
                     <button key={s} type="button" disabled={!editable} data-on={v.status === s}
                       onClick={() => set(c.id, { status: s })}
                       className={cn("h-10 rounded-lg border border-slate-200 bg-white px-2 text-xs font-medium text-slate-600 transition md:px-3 md:text-sm", editable && "hover:bg-slate-50", STYLES[s])}>
-                      {ATTENDANCE_STATUS[s].label}
+                      {t(ATTENDANCE_STATUS[s].label)}
                     </button>
                   ))}
                   {editable && (
-                    <button type="button" onClick={() => setNotesOpen((o) => ({ ...o, [c.id]: !o[c.id] }))} aria-label="Izoh qo'shish"
+                    <button type="button" onClick={() => setNotesOpen((o) => ({ ...o, [c.id]: !o[c.id] }))} aria-label={t("Izoh qo'shish")}
                       className={cn("col-span-4 flex h-10 items-center justify-center gap-1 rounded-lg border border-dashed border-slate-200 text-xs text-slate-500 md:col-span-1 md:w-10", v.note && "border-solid border-brand-300 text-brand-600")}>
-                      <MessageSquarePlus className="h-4 w-4" /><span className="md:hidden">Izoh</span>
+                      <MessageSquarePlus className="h-4 w-4" /><span className="md:hidden">{t("Izoh")}</span>
                     </button>
                   )}
                 </div>
               </div>
               {(notesOpen[c.id] || (!editable && v.note)) && (
                 <div className="mt-2 md:pl-9">
-                  <Input value={v.note} disabled={!editable} onChange={(e) => set(c.id, { note: e.target.value })} maxLength={500} placeholder="Izoh (masalan: kasal, shifokorda)" />
+                  <Input value={v.note} disabled={!editable} onChange={(e) => set(c.id, { note: e.target.value })} maxLength={500} placeholder={t("Izoh (masalan: kasal, shifokorda)")} />
                 </div>
               )}
             </li>
@@ -118,15 +120,14 @@ export function AttendanceSheet({ date, kids: children, editable, needsReason, l
         <div className="sticky bottom-0 space-y-3 border-t border-slate-200 bg-white/95 p-4 backdrop-blur">
           {needsReason && (
             <div>
-              <Label htmlFor="reason">O&apos;tgan kunni tuzatish sababi <span className="text-red-500">*</span></Label>
-              <Textarea id="reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Masalan: kecha internet yo'q edi, qog'ozdagi jurnal bo'yicha kiritildi" />
+              <Label htmlFor="reason">{t("O'tgan kunni tuzatish sababi")}{" "}<span className="text-red-500">*</span></Label>
+              <Textarea id="reason" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t("Masalan: kecha internet yo'q edi, qog'ozdagi jurnal bo'yicha kiritildi")} />
             </div>
           )}
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-slate-500">{changed.length ? `${changed.length} ta o'zgarish saqlanmagan` : "O'zgarishlar yo'q"}</span>
+            <span className="text-sm text-slate-500">{changed.length ? t("{0} ta o'zgarish saqlanmagan", [changed.length]) : t("O'zgarishlar yo'q")}</span>
             <Button onClick={save} disabled={!changed.length || saving || (needsReason && reason.trim().length < 5)} size="lg">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Saqlash
-            </Button>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{" "}{t("Saqlash")}</Button>
           </div>
         </div>
       )}

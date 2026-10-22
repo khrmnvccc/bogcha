@@ -14,8 +14,12 @@ import { Table, THead, TH, TR, TD } from "@/components/ui/table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { LinkButton } from "@/components/ui/button";
 import { AttendanceEditor, ReviewButton } from "./admin-tools";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Ishga kelish-ketish" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Ishga kelish-ketish") };
+}
 
 type Rec = {
   id: string; employee_id: string; work_date: string; check_in_at: string; check_out_at: string | null;
@@ -33,15 +37,16 @@ export default async function AttendancePage({ searchParams }: { searchParams: P
   return <OwnHistory user={user} />;
 }
 
-function Flags({ r, today }: { r: Rec; today: string }) {
+async function Flags({ r, today }: { r: Rec; today: string }) {
+  const { t } = await getI18n();
   return (
     <div className="flex flex-wrap gap-1">
-      {r.late_minutes > 0 && <Badge tone="amber">{r.late_minutes} daq kechikdi</Badge>}
-      {r.early_leave_minutes > 0 && <Badge tone="amber">{r.early_leave_minutes} daq erta ketdi</Badge>}
-      {!r.check_out_at && r.work_date < today && <Badge tone="red">Ketish belgilanmagan</Badge>}
-      {r.review_status === "needs_review" && <Badge tone="red" title={r.review_reasons.join(", ")}>Tekshirish kerak</Badge>}
-      {r.review_status === "reviewed" && <Badge tone="gray">Ko&apos;rib chiqilgan</Badge>}
-      {r.is_corrected && <Badge tone="violet" title={r.note ?? undefined}>Tuzatilgan</Badge>}
+      {r.late_minutes > 0 && <Badge tone="amber">{r.late_minutes}{" "}{t("daq kechikdi")}</Badge>}
+      {r.early_leave_minutes > 0 && <Badge tone="amber">{r.early_leave_minutes}{" "}{t("daq erta ketdi")}</Badge>}
+      {!r.check_out_at && r.work_date < today && <Badge tone="red">{t("Ketish belgilanmagan")}</Badge>}
+      {r.review_status === "needs_review" && <Badge tone="red" title={r.review_reasons.join(", ")}>{t("Tekshirish kerak")}</Badge>}
+      {r.review_status === "reviewed" && <Badge tone="gray">{t("Ko'rib chiqilgan")}</Badge>}
+      {r.is_corrected && <Badge tone="violet" title={r.note ?? undefined}>{t("Tuzatilgan")}</Badge>}
     </div>
   );
 }
@@ -53,6 +58,7 @@ function SourceBadge({ source }: { source: string | null }) {
 }
 
 async function AdminView({ params }: { params: SP }) {
+  const { t, f } = await getI18n();
   const supabase = await createClient();
   const today = todayISO();
   const from = sp(params.dan) ?? today;
@@ -91,25 +97,25 @@ async function AdminView({ params }: { params: SP }) {
   return (
     <div>
       <PageHeader
-        title="Ishga kelish-ketish"
-        description="Xodimlarning kelish va ketish vaqtlari. Vaqtlar serverda, Toshkent vaqti bilan qayd etiladi."
+        title={t("Ishga kelish-ketish")}
+        description={t("Xodimlarning kelish va ketish vaqtlari. Vaqtlar serverda, Toshkent vaqti bilan qayd etiladi.")}
         actions={<>
-          <LinkButton variant="outline" href={`/hisobotlar?tur=xodimlar-davomati&oy=${currentMonthISO().slice(0, 7)}`}>Oylik hisobot</LinkButton>
+          <LinkButton variant="outline" href={`/hisobotlar?tur=xodimlar-davomati&oy=${currentMonthISO().slice(0, 7)}`}>{t("Oylik hisobot")}</LinkButton>
           <AttendanceEditor employees={employees} />
         </>}
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <StatCard label="Bugun kutilmoqda" value={expected.length} icon={<Users className="h-5 w-5" />} />
-        <StatCard label="Hozir ishda" value={(todayRecs ?? []).filter((r) => !r.check_out_at).length} icon={<UserCheck className="h-5 w-5" />} tone="green" />
-        <StatCard label="Kelmagan" value={absentToday.length} icon={<UserX className="h-5 w-5" />} tone="red" href="/ishga-kelish?holat=kelmagan" />
-        <StatCard label="Kechikkan" value={(todayRecs ?? []).filter((r) => r.late_minutes > 0).length} icon={<Clock className="h-5 w-5" />} tone="amber" href={`/ishga-kelish?holat=kechikkan`} />
-        <StatCard label="Chala yozuvlar" value={incomplete ?? 0} icon={<TimerOff className="h-5 w-5" />} tone="violet" href={`/ishga-kelish?holat=belgilanmagan&dan=${addDaysISO(today, -30)}`} />
+        <StatCard label={t("Bugun kutilmoqda")} value={expected.length} icon={<Users className="h-5 w-5" />} />
+        <StatCard label={t("Hozir ishda")} value={(todayRecs ?? []).filter((r) => !r.check_out_at).length} icon={<UserCheck className="h-5 w-5" />} tone="green" />
+        <StatCard label={t("Kelmagan")} value={absentToday.length} icon={<UserX className="h-5 w-5" />} tone="red" href="/ishga-kelish?holat=kelmagan" />
+        <StatCard label={t("Kechikkan")} value={(todayRecs ?? []).filter((r) => r.late_minutes > 0).length} icon={<Clock className="h-5 w-5" />} tone="amber" href={`/ishga-kelish?holat=kechikkan`} />
+        <StatCard label={t("Chala yozuvlar")} value={incomplete ?? 0} icon={<TimerOff className="h-5 w-5" />} tone="violet" href={`/ishga-kelish?holat=belgilanmagan&dan=${addDaysISO(today, -30)}`} />
       </div>
       {(needsReview ?? 0) > 0 && (
         <Notice tone="amber" className="mb-4 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>{needsReview} ta yozuv tekshirishni talab qiladi.{" "}
-            <Link className="font-medium underline" href={`/ishga-kelish?holat=tekshirish&dan=${addDaysISO(today, -60)}`}>Ko&apos;rish</Link></span>
+          <span>{needsReview}{" "}{t("ta yozuv tekshirishni talab qiladi.")}{" "}
+            <Link className="font-medium underline" href={`/ishga-kelish?holat=tekshirish&dan=${addDaysISO(today, -60)}`}>{t("Ko'rish")}</Link></span>
         </Notice>
       )}
       <Card>
@@ -129,9 +135,9 @@ async function AdminView({ params }: { params: SP }) {
           ]} />
         </div>
         {showAbsent ? (
-          absentToday.length === 0 ? <EmptyState title="Bugun barcha kutilgan xodimlar kelgan" /> : (
+          absentToday.length === 0 ? <EmptyState title={t("Bugun barcha kutilgan xodimlar kelgan")} /> : (
             <Table>
-              <THead><tr><TH>Xodim</TH><TH>Lavozim</TH><TH>Ish boshlanishi</TH></tr></THead>
+              <THead><tr><TH>{t("Xodim")}</TH><TH>{t("Lavozim")}</TH><TH>{t("Ish boshlanishi")}</TH></tr></THead>
               <tbody>
                 {absentToday.map((e) => (
                   <TR key={e.id}>
@@ -144,19 +150,19 @@ async function AdminView({ params }: { params: SP }) {
             </Table>
           )
         ) : records.length === 0 ? (
-          <EmptyState title="Yozuvlar topilmadi" description="Sana oralig'ini yoki filtrlarni o'zgartiring" />
+          <EmptyState title={t("Yozuvlar topilmadi")} description={t("Sana oralig'ini yoki filtrlarni o'zgartiring")} />
         ) : (
           <>
             <Table>
-              <THead><tr><TH>Sana</TH><TH>Xodim</TH><TH>Keldi</TH><TH>Ketdi</TH><TH>Ishladi</TH><TH>Belgilar</TH><TH className="text-right">Amallar</TH></tr></THead>
+              <THead><tr><TH>{t("Sana")}</TH><TH>{t("Xodim")}</TH><TH>{t("Keldi")}</TH><TH>{t("Ketdi")}</TH><TH>{t("Ishladi")}</TH><TH>{t("Belgilar")}</TH><TH className="text-right">{t("Amallar")}</TH></tr></THead>
               <tbody>
                 {records.map((r) => (
                   <TR key={r.id}>
-                    <TD className="whitespace-nowrap">{formatDate(r.work_date)}<p className="text-xs text-slate-400">{weekdayName(r.work_date)}</p></TD>
+                    <TD className="whitespace-nowrap">{formatDate(r.work_date)}<p className="text-xs text-slate-400">{f.weekdayName(r.work_date)}</p></TD>
                     <TD><Link href={`/xodimlar/${r.employee_id}`} className="font-medium hover:text-brand-700">{r.employees?.full_name}</Link></TD>
                     <TD className="whitespace-nowrap">{formatTime(r.check_in_at)}<div className="mt-1"><SourceBadge source={r.check_in_source} /></div></TD>
                     <TD className="whitespace-nowrap">{r.check_out_at ? <>{formatTime(r.check_out_at)}<div className="mt-1"><SourceBadge source={r.check_out_source} /></div></> : "—"}</TD>
-                    <TD className="whitespace-nowrap">{formatMinutes(r.worked_minutes)}</TD>
+                    <TD className="whitespace-nowrap">{f.formatMinutes(r.worked_minutes)}</TD>
                     <TD><Flags r={r} today={today} /></TD>
                     <TD className="whitespace-nowrap text-right">
                       <AttendanceEditor employees={employees} initial={{
@@ -170,7 +176,7 @@ async function AdminView({ params }: { params: SP }) {
               </tbody>
             </Table>
             <div className="border-t border-slate-100 px-4 py-3 text-sm text-slate-600">
-              {records.length} ta yozuv · Jami ishlangan vaqt: <b>{formatMinutes(totalMin)}</b>
+              {records.length}{" "}{t("ta yozuv · Jami ishlangan vaqt:")}{" "}<b>{f.formatMinutes(totalMin)}</b>
             </div>
           </>
         )}
@@ -180,11 +186,12 @@ async function AdminView({ params }: { params: SP }) {
 }
 
 async function OwnHistory({ user }: { user: CurrentUser }) {
+  const { t, f } = await getI18n();
   if (!user.employeeId) {
     return (
       <div>
-        <PageHeader title="Ishga kelish-ketish" />
-        <Notice tone="amber">Hisobingiz xodim kartasiga bog&apos;lanmagan. Administratorga murojaat qiling.</Notice>
+        <PageHeader title={t("Ishga kelish-ketish")} />
+        <Notice tone="amber">{t("Hisobingiz xodim kartasiga bog'lanmagan. Administratorga murojaat qiling.")}</Notice>
       </div>
     );
   }
@@ -201,25 +208,25 @@ async function OwnHistory({ user }: { user: CurrentUser }) {
 
   return (
     <div>
-      <PageHeader title="Mening davomatim" description="Kelish-ketish vaqtlaringiz va ishlagan soatlaringiz. Vaqtlarni faqat administrator tuzata oladi." />
+      <PageHeader title={t("Mening davomatim")} description={t("Kelish-ketish vaqtlaringiz va ishlagan soatlaringiz. Vaqtlarni faqat administrator tuzata oladi.")} />
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard label="Bugun" value={formatHours(sum((r) => r.work_date === today))} icon={<Clock className="h-5 w-5" />} />
-        <StatCard label="Shu hafta" value={formatHours(sum((r) => r.work_date >= weekStart))} icon={<Clock className="h-5 w-5" />} tone="violet" />
-        <StatCard label="Shu oy" value={formatHours(sum((r) => r.work_date >= month))} icon={<Clock className="h-5 w-5" />} tone="green"
-          hint={`${recs.filter((r) => r.work_date >= month && r.late_minutes > 0).length} marta kechikish`} />
+        <StatCard label={t("Bugun")} value={f.formatHours(sum((r) => r.work_date === today))} icon={<Clock className="h-5 w-5" />} />
+        <StatCard label={t("Shu hafta")} value={f.formatHours(sum((r) => r.work_date >= weekStart))} icon={<Clock className="h-5 w-5" />} tone="violet" />
+        <StatCard label={t("Shu oy")} value={f.formatHours(sum((r) => r.work_date >= month))} icon={<Clock className="h-5 w-5" />} tone="green"
+          hint={t("{0} marta kechikish", [recs.filter((r) => r.work_date >= month && r.late_minutes > 0).length])} />
       </div>
       <Card>
-        <CardHeader title="Oxirgi yozuvlar" description="So'nggi 2 oy" />
-        {recs.length === 0 ? <EmptyState title="Hali yozuvlar yo'q" /> : (
+        <CardHeader title={t("Oxirgi yozuvlar")} description={t("So'nggi 2 oy")} />
+        {recs.length === 0 ? <EmptyState title={t("Hali yozuvlar yo'q")} /> : (
           <Table>
-            <THead><tr><TH>Sana</TH><TH>Keldi</TH><TH>Ketdi</TH><TH>Ishladi</TH><TH>Belgilar</TH></tr></THead>
+            <THead><tr><TH>{t("Sana")}</TH><TH>{t("Keldi")}</TH><TH>{t("Ketdi")}</TH><TH>{t("Ishladi")}</TH><TH>{t("Belgilar")}</TH></tr></THead>
             <tbody>
               {recs.map((r) => (
                 <TR key={r.id}>
-                  <TD className="whitespace-nowrap">{formatDate(r.work_date)} <span className="text-xs text-slate-400">{weekdayName(r.work_date)}</span></TD>
+                  <TD className="whitespace-nowrap">{formatDate(r.work_date)} <span className="text-xs text-slate-400">{f.weekdayName(r.work_date)}</span></TD>
                   <TD>{formatTime(r.check_in_at)} <SourceBadge source={r.check_in_source} /></TD>
                   <TD>{r.check_out_at ? formatTime(r.check_out_at) : "—"}</TD>
-                  <TD>{formatMinutes(r.worked_minutes)}</TD>
+                  <TD>{f.formatMinutes(r.worked_minutes)}</TD>
                   <TD><Flags r={r} today={today} /></TD>
                 </TR>
               ))}

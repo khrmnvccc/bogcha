@@ -9,8 +9,12 @@ import { PageHeader, StatCard, EmptyState } from "@/components/ui/misc";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RevenueChart, AttendanceChart, DebtChart } from "@/components/charts";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Boshqaruv paneli" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Boshqaruv paneli") };
+}
 
 function upcomingBirthdays(children: { id: string; full_name: string; birth_date: string; kg_groups: { name: string } | null }[], today: string, days = 14) {
   const out: { id: string; name: string; group?: string; date: string; age: number }[] = [];
@@ -26,6 +30,7 @@ function upcomingBirthdays(children: { id: string; full_name: string; birth_date
 }
 
 export default async function DashboardPage() {
+  const { t, f } = await getI18n();
   const user = await requireUser(FINANCE_ROLES);
   const isAdmin = ADMIN_ROLES.includes(user.profile.role);
   const supabase = await createClient();
@@ -80,7 +85,9 @@ export default async function DashboardPage() {
       ...((recentChild ?? []) as unknown as CA[]).map((c) => ({ id: `c${c.id}`, when: c.updated_at, text: c.children?.full_name ?? "", status: c.status })),
       ...((recentEmp ?? []) as unknown as EA[]).map((e) => ({
         id: `e${e.id}`, when: e.updated_at,
-        text: `${e.employees?.full_name ?? ""} ${e.check_out_at ? `ishdan ketdi (${formatTime(e.check_out_at)})` : `ishga keldi (${formatTime(e.check_in_at)})`}`,
+        text: e.check_out_at
+          ? t("{0} ishdan ketdi ({1})", [e.employees?.full_name ?? "", formatTime(e.check_out_at)])
+          : t("{0} ishga keldi ({1})", [e.employees?.full_name ?? "", formatTime(e.check_in_at)]),
       })),
     ].sort((a, b) => b.when.localeCompare(a.when)).slice(0, 8);
   }
@@ -93,57 +100,57 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Boshqaruv paneli" description={`${weekdayName(today)}, ${formatDateLong(today)}`} />
+      <PageHeader title={t("Boshqaruv paneli")} description={`${f.weekdayName(today)}, ${f.formatDateLong(today)}`} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Faol bolalar" value={childCount ?? 0} icon={<Baby className="h-5 w-5" />} href="/bolalar" />
-        {isAdmin && <StatCard label="Faol xodimlar" value={staff.employees} icon={<Users className="h-5 w-5" />} tone="violet" href="/xodimlar" />}
-        {isAdmin && <StatCard label="Bugun kelgan bolalar" value={staff.present} icon={<UserCheck className="h-5 w-5" />} tone="green" href="/davomat" hint={staff.unmarked ? `${staff.unmarked} ta belgilanmagan` : "Hammasi belgilangan"} />}
-        {isAdmin && <StatCard label="Bugun kelmagan bolalar" value={staff.absent} icon={<UserX className="h-5 w-5" />} tone="red" href="/davomat" />}
-        {isAdmin && <StatCard label="Hozir ishdagi xodimlar" value={staff.atWork} icon={<Briefcase className="h-5 w-5" />} tone="blue" href="/ishga-kelish" />}
-        <StatCard label="Shu oy yig'ilgan" value={formatSom(collected)} icon={<Wallet className="h-5 w-5" />} tone="green" href="/tolovlar-tarixi" />
-        <StatCard label="Umumiy qarzdorlik" value={formatSom(outstanding)} icon={<AlertCircle className="h-5 w-5" />} tone="red" href="/tolovlar?holat=qarz" hint={`${overdue.length} ta muddati o'tgan hisob`} />
-        <StatCard label="Yig'ish darajasi" value={rate == null ? "—" : `${rate}%`} icon={<Percent className="h-5 w-5" />} tone="amber" hint={formatMonth(month)} />
+        <StatCard label={t("Faol bolalar")} value={childCount ?? 0} icon={<Baby className="h-5 w-5" />} href="/bolalar" />
+        {isAdmin && <StatCard label={t("Faol xodimlar")} value={staff.employees} icon={<Users className="h-5 w-5" />} tone="violet" href="/xodimlar" />}
+        {isAdmin && <StatCard label={t("Bugun kelgan bolalar")} value={staff.present} icon={<UserCheck className="h-5 w-5" />} tone="green" href="/davomat" hint={staff.unmarked ? t("{0} ta belgilanmagan", [staff.unmarked]) : t("Hammasi belgilangan")} />}
+        {isAdmin && <StatCard label={t("Bugun kelmagan bolalar")} value={staff.absent} icon={<UserX className="h-5 w-5" />} tone="red" href="/davomat" />}
+        {isAdmin && <StatCard label={t("Hozir ishdagi xodimlar")} value={staff.atWork} icon={<Briefcase className="h-5 w-5" />} tone="blue" href="/ishga-kelish" />}
+        <StatCard label={t("Shu oy yig'ilgan")} value={f.formatSom(collected)} icon={<Wallet className="h-5 w-5" />} tone="green" href="/tolovlar-tarixi" />
+        <StatCard label={t("Umumiy qarzdorlik")} value={f.formatSom(outstanding)} icon={<AlertCircle className="h-5 w-5" />} tone="red" href="/tolovlar?holat=qarz" hint={t("{0} ta muddati o'tgan hisob", [overdue.length])} />
+        <StatCard label={t("Yig'ish darajasi")} value={rate == null ? "—" : `${rate}%`} icon={<Percent className="h-5 w-5" />} tone="amber" hint={f.formatMonth(month)} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Oylik tushum" description="Hisoblangan va yig'ilgan summa, oxirgi 12 oy" />
-          <CardBody>{rev.length ? <RevenueChart data={rev} /> : <EmptyState title="Ma'lumot yo'q" />}</CardBody>
+          <CardHeader title={t("Oylik tushum")} description={t("Hisoblangan va yig'ilgan summa, oxirgi 12 oy")} />
+          <CardBody>{rev.length ? <RevenueChart data={rev} /> : <EmptyState title={t("Ma'lumot yo'q")} />}</CardBody>
         </Card>
         {isAdmin ? (
           <Card>
-            <CardHeader title="Bolalar davomati" description="Oxirgi 30 kun" />
-            <CardBody>{trend.some((t) => t.present + t.late + t.absent + t.excused > 0) ? <AttendanceChart data={trend} /> : <EmptyState title="Hali davomat belgilanmagan" />}</CardBody>
+            <CardHeader title={t("Bolalar davomati")} description={t("Oxirgi 30 kun")} />
+            <CardBody>{trend.some((t) => t.present + t.late + t.absent + t.excused > 0) ? <AttendanceChart data={trend} /> : <EmptyState title={t("Hali davomat belgilanmagan")} />}</CardBody>
           </Card>
         ) : (
           <Card>
-            <CardHeader title="To'lanmagan summa" description="Oylar kesimida qolgan qarz" />
-            <CardBody>{rev.some((r) => r.outstanding > 0) ? <DebtChart data={rev} /> : <EmptyState title="Qarzdorlik yo'q" />}</CardBody>
+            <CardHeader title={t("To'lanmagan summa")} description={t("Oylar kesimida qolgan qarz")} />
+            <CardBody>{rev.some((r) => r.outstanding > 0) ? <DebtChart data={rev} /> : <EmptyState title={t("Qarzdorlik yo'q")} />}</CardBody>
           </Card>
         )}
       </div>
 
       {isAdmin && (
         <Card>
-          <CardHeader title="To'lanmagan summa" description="Oylar kesimida qolgan qarz" />
-          <CardBody>{rev.some((r) => r.outstanding > 0) ? <DebtChart data={rev} /> : <EmptyState title="Qarzdorlik yo'q" />}</CardBody>
+          <CardHeader title={t("To'lanmagan summa")} description={t("Oylar kesimida qolgan qarz")} />
+          <CardBody>{rev.some((r) => r.outstanding > 0) ? <DebtChart data={rev} /> : <EmptyState title={t("Qarzdorlik yo'q")} />}</CardBody>
         </Card>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader title="Oxirgi to'lovlar" action={<Link href="/tolovlar-tarixi" className="text-sm text-brand-700">Barchasi</Link>} />
-          {(recentPayments ?? []).length === 0 ? <EmptyState title="Hali to'lovlar yo'q" /> : (
+          <CardHeader title={t("Oxirgi to'lovlar")} action={<Link href="/tolovlar-tarixi" className="text-sm text-brand-700">{t("Barchasi")}</Link>} />
+          {(recentPayments ?? []).length === 0 ? <EmptyState title={t("Hali to'lovlar yo'q")} /> : (
             <ul className="divide-y divide-slate-100">
               {((recentPayments ?? []) as unknown as RP[]).map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-slate-900">{p.children?.full_name}</p>
-                    <p className="text-xs text-slate-500">{formatMonth(p.invoices?.period)} · {PAYMENT_METHOD[p.method]} · {p.receipt_number}</p>
+                    <p className="text-xs text-slate-500">{f.formatMonth(p.invoices?.period)} · {t(PAYMENT_METHOD[p.method])} · {p.receipt_number}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-mint-700">{formatSom(p.amount)}</p>
+                    <p className="text-sm font-semibold text-mint-700">{f.formatSom(p.amount)}</p>
                     <p className="text-xs text-slate-400">{formatDate(p.paid_on)}</p>
                   </div>
                 </li>
@@ -153,24 +160,24 @@ export default async function DashboardPage() {
         </Card>
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Yaqin tug'ilgan kunlar" description="Keyingi 14 kun" />
+            <CardHeader title={t("Yaqin tug'ilgan kunlar")} description={t("Keyingi 14 kun")} />
             <CardBody className="space-y-3">
-              {birthdays.length === 0 ? <p className="text-sm text-slate-500">Yaqin kunlarda tug&apos;ilgan kun yo&apos;q</p> : birthdays.map((b) => (
+              {birthdays.length === 0 ? <p className="text-sm text-slate-500">{t("Yaqin kunlarda tug'ilgan kun yo'q")}</p> : birthdays.map((b) => (
                 <div key={b.id + b.date} className="flex items-center gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600"><Cake className="h-4 w-4" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-900">{b.name}</p>
-                    <p className="text-xs text-slate-500">{b.group ?? "Guruhsiz"} · {b.age} yosh</p>
+                    <p className="text-xs text-slate-500">{b.group ?? t("Guruhsiz")} · {b.age}{" "}{t("yosh")}</p>
                   </div>
-                  <Badge tone={b.date === today ? "green" : "gray"}>{b.date === today ? "Bugun" : formatDate(b.date).slice(0, 5)}</Badge>
+                  <Badge tone={b.date === today ? "green" : "gray"}>{b.date === today ? t("Bugun") : formatDate(b.date).slice(0, 5)}</Badge>
                 </div>
               ))}
             </CardBody>
           </Card>
           <Card>
-            <CardHeader title="E'lonlar" action={<Link href="/elonlar" className="text-sm text-brand-700">Barchasi</Link>} />
+            <CardHeader title={t("E'lonlar")} action={<Link href="/elonlar" className="text-sm text-brand-700">{t("Barchasi")}</Link>} />
             <CardBody className="space-y-3">
-              {(news ?? []).length === 0 ? <p className="text-sm text-slate-500">E&apos;lonlar yo&apos;q</p> : (news ?? []).map((n) => (
+              {(news ?? []).length === 0 ? <p className="text-sm text-slate-500">{t("E'lonlar yo'q")}</p> : (news ?? []).map((n) => (
                 <div key={n.id} className="flex gap-3">
                   <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
                   <div><p className="text-sm font-medium text-slate-900">{n.title}</p><p className="text-xs text-slate-400">{formatDateTime(n.created_at)}</p></div>
@@ -183,14 +190,14 @@ export default async function DashboardPage() {
 
       {isAdmin && (
         <Card>
-          <CardHeader title="Oxirgi davomat harakatlari" />
-          {activity.length === 0 ? <EmptyState title="Hali harakatlar yo'q" /> : (
+          <CardHeader title={t("Oxirgi davomat harakatlari")} />
+          {activity.length === 0 ? <EmptyState title={t("Hali harakatlar yo'q")} /> : (
             <ul className="divide-y divide-slate-100">
               {activity.map((a) => (
                 <li key={a.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
                   <span className="min-w-0 truncate text-slate-700">
                     {a.text}
-                    {a.status && <Badge tone={ATTENDANCE_STATUS[a.status]?.tone} className="ml-2">{ATTENDANCE_STATUS[a.status]?.label}</Badge>}
+                    {a.status && <Badge tone={ATTENDANCE_STATUS[a.status]?.tone} className="ml-2">{t(ATTENDANCE_STATUS[a.status]?.label ?? "")}</Badge>}
                   </span>
                   <span className="shrink-0 text-xs text-slate-400">{formatDateTime(a.when)}</span>
                 </li>

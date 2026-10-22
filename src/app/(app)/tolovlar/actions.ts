@@ -10,6 +10,7 @@ import { authorize, isUser, dbErrorMessage, fieldErrors, type ActionState } from
 import { FINANCE_ROLES, ADMIN_ROLES } from "@/lib/auth";
 import { zDate, zMoney, zOptText, zText, zUuid } from "@/lib/validation";
 import { addMonthsISO, currentMonthISO, formatSom, todayISO } from "@/lib/format";
+import { tr } from "@/lib/i18n/server";
 
 const monthSchema = z.string().regex(/^\d{4}-\d{2}$/, "Oyni tanlang").transform((m) => `${m}-01`);
 
@@ -29,7 +30,7 @@ export async function generateInvoices(_p: ActionState, fd: FormData): Promise<A
   const { data, error } = await supabase.rpc("generate_monthly_invoices", { p_period: month.data });
   if (error) return { ok: false, message: dbErrorMessage(error) };
   revalidateFinance();
-  return { ok: true, message: data ? `${data} ta yangi hisob yaratildi` : "Barcha faol bolalar uchun hisoblar allaqachon mavjud" };
+  return { ok: true, message: data ? await tr("{0} ta yangi hisob yaratildi", [data]) : "Barcha faol bolalar uchun hisoblar allaqachon mavjud" };
 }
 
 const paymentSchema = z.object({
@@ -63,7 +64,7 @@ export async function recordPayment(_p: ActionState, fd: FormData): Promise<Acti
     if (dup?.length) {
       return {
         ok: false,
-        message: `Xuddi shunday to'lov (${formatSom(v.amount)}) yaqinda kiritilgan: ${dup[0].receipt_number}. Agar bu boshqa to'lov bo'lsa, tasdiqlab qayta saqlang.`,
+        message: await tr("Xuddi shunday to'lov ({0}) yaqinda kiritilgan: {1}. Agar bu boshqa to'lov bo'lsa, tasdiqlab qayta saqlang.", [formatSom(v.amount), dup[0].receipt_number]),
         data: { duplicate: true },
       };
     }
@@ -81,7 +82,7 @@ export async function recordPayment(_p: ActionState, fd: FormData): Promise<Acti
   revalidateFinance();
   revalidatePath(`/bolalar/${v.child_id}`);
   if (anyChannelConfigured()) after(() => dispatchPending().then(() => undefined));
-  return { ok: true, message: `To'lov saqlandi. Kvitansiya: ${data.receipt_number}`, data: { paymentId: data.id } };
+  return { ok: true, message: await tr("To'lov saqlandi. Kvitansiya: {0}", [data.receipt_number]), data: { paymentId: data.id } };
 }
 
 export async function voidPayment(_p: ActionState, fd: FormData): Promise<ActionState> {
@@ -175,5 +176,5 @@ export async function sendDebtReminders(): Promise<ActionState> {
     if (error) return { ok: false, message: dbErrorMessage(error) };
   }
   if (anyChannelConfigured()) after(() => dispatchPending(200).then(() => undefined));
-  return { ok: true, message: `${byChild.size} ta oilaga eslatma yuborildi` };
+  return { ok: true, message: await tr("{0} ta oilaga eslatma yuborildi", [byChild.size]) };
 }

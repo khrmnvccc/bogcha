@@ -14,8 +14,12 @@ import { Table, THead, TH, TR, TD } from "@/components/ui/table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { LinkButton } from "@/components/ui/button";
 import { VoidPayment } from "../tolovlar/tools";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "To'lovlar tarixi" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("To'lovlar tarixi") };
+}
 const PAGE = 50;
 
 type P = {
@@ -24,6 +28,7 @@ type P = {
 };
 
 export default async function PaymentsHistoryPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t, f } = await getI18n();
   await requireUser(FINANCE_ROLES);
   const params = await searchParams;
   const supabase = await createClient();
@@ -63,14 +68,14 @@ export default async function PaymentsHistoryPage({ searchParams }: { searchPara
 
   return (
     <div>
-      <PageHeader title="To'lovlar tarixi" description={`${formatDate(from)} – ${formatDate(to)} · Jami: ${formatSom(sum)}`}
+      <PageHeader title={t("To'lovlar tarixi")} description={t("{0} – {1} · Jami: {2}", [formatDate(from), formatDate(to), f.formatSom(sum)])}
         actions={<>
-          <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar-tarixi?${exportQs}&format=xlsx`} prefetch={false}><FileSpreadsheet className="h-4 w-4" /> Excel</LinkButton>
-          <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar-tarixi?${exportQs}&format=pdf`} prefetch={false}><FileText className="h-4 w-4" /> PDF</LinkButton>
+          <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar-tarixi?${exportQs}&format=xlsx`} prefetch={false}><FileSpreadsheet className="h-4 w-4" />{" "}{t("Excel")}</LinkButton>
+          <LinkButton variant="outline" size="sm" href={`/api/hisobot/tolovlar-tarixi?${exportQs}&format=pdf`} prefetch={false}><FileText className="h-4 w-4" />{" "}{t("PDF")}</LinkButton>
         </>} />
       {byMethod.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2 text-sm">
-          {byMethod.map(([m, v]) => <span key={m} className="rounded-full border border-slate-200 bg-white px-3 py-1">{PAYMENT_METHOD[m]}: <b>{formatSom(v)}</b></span>)}
+          {byMethod.map(([m, v]) => <span key={m} className="rounded-full border border-slate-200 bg-white px-3 py-1">{t(PAYMENT_METHOD[m])}: <b>{f.formatSom(v)}</b></span>)}
         </div>
       )}
       <Card>
@@ -83,25 +88,25 @@ export default async function PaymentsHistoryPage({ searchParams }: { searchPara
             { type: "select", name: "guruh", label: "Guruh", options: (groups ?? []).map((g) => ({ value: g.id, label: g.name })) },
           ]} />
           <Link href={`/tolovlar-tarixi?${(() => { const u = new URLSearchParams(qsBase); if (showVoid) u.delete("bekor"); else u.set("bekor", "1"); return u.toString(); })()}`} className="text-sm text-slate-500 hover:text-brand-700">
-            {showVoid ? "Bekor qilinganlarni yashirish" : "Bekor qilinganlarni ham ko'rsatish"}
+            {showVoid ? t("Bekor qilinganlarni yashirish") : t("Bekor qilinganlarni ham ko'rsatish")}
           </Link>
         </div>
-        {rows.length === 0 ? <EmptyState title="Bu davrda to'lovlar yo'q" /> : (
+        {rows.length === 0 ? <EmptyState title={t("Bu davrda to'lovlar yo'q")} /> : (
           <>
             <Table>
-              <THead><tr><TH>Sana</TH><TH>Bola</TH><TH>Oy</TH><TH>Usul</TH><TH>Kvitansiya</TH><TH className="text-right">Summa</TH><TH>Kiritgan</TH><TH /></tr></THead>
+              <THead><tr><TH>{t("Sana")}</TH><TH>{t("Bola")}</TH><TH>{t("Oy")}</TH><TH>{t("Usul")}</TH><TH>{t("Kvitansiya")}</TH><TH className="text-right">{t("Summa")}</TH><TH>{t("Kiritgan")}</TH><TH /></tr></THead>
               <tbody>
                 {rows.map((p) => (
                   <TR key={p.id} className={p.is_void ? "opacity-60" : undefined}>
                     <TD className="whitespace-nowrap">{formatDate(p.paid_on)}</TD>
                     <TD><Link href={`/tolovlar/hisob/${p.invoice_id}`} className="font-medium hover:text-brand-700">{p.children?.full_name}</Link>{p.note && <p className="text-xs text-slate-500">{p.note}</p>}</TD>
-                    <TD className="whitespace-nowrap">{formatMonth(p.invoices?.period)}</TD>
-                    <TD>{PAYMENT_METHOD[p.method]}</TD>
-                    <TD className="font-mono text-xs">{p.receipt_number}{p.is_void && <Badge tone="red" className="ml-1" title={p.void_reason ?? ""}>bekor</Badge>}</TD>
-                    <TD className={`whitespace-nowrap text-right font-semibold ${p.is_void ? "line-through" : "text-mint-700"}`}>{formatSom(p.amount)}</TD>
+                    <TD className="whitespace-nowrap">{f.formatMonth(p.invoices?.period)}</TD>
+                    <TD>{t(PAYMENT_METHOD[p.method])}</TD>
+                    <TD className="font-mono text-xs">{p.receipt_number}{p.is_void && <Badge tone="red" className="ml-1" title={p.void_reason ?? ""}>{t("bekor")}</Badge>}</TD>
+                    <TD className={`whitespace-nowrap text-right font-semibold ${p.is_void ? "line-through" : "text-mint-700"}`}>{f.formatSom(p.amount)}</TD>
                     <TD className="text-xs text-slate-500">{p.recorder?.full_name}<br />{formatDateTime(p.created_at)}</TD>
                     <TD className="whitespace-nowrap text-right">
-                      {!p.is_void && <a href={`/api/kvitansiya/${p.id}`} target="_blank" rel="noopener" className="inline-flex p-2 text-brand-700" aria-label="Kvitansiya"><FileDown className="h-4 w-4" /></a>}
+                      {!p.is_void && <a href={`/api/kvitansiya/${p.id}`} target="_blank" rel="noopener" className="inline-flex p-2 text-brand-700" aria-label={t("Kvitansiya")}><FileDown className="h-4 w-4" /></a>}
                       {!p.is_void && <VoidPayment id={p.id} receipt={p.receipt_number} />}
                     </TD>
                   </TR>

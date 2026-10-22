@@ -11,10 +11,15 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { Table, THead, TH, TR, TD } from "@/components/ui/table";
 import { LinkButton } from "@/components/ui/button";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Guruh" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Guruh") };
+}
 
 export default async function GroupPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t, f } = await getI18n();
   await requireUser(STAFF_ROLES);
   const { id } = await params;
   const supabase = await createClient();
@@ -32,11 +37,11 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="space-y-6">
       <PageHeader title={g.name} description={[g.age_range, g.room].filter(Boolean).join(" · ") || undefined} back={{ href: "/guruhlar", label: "Guruhlar" }}
-        actions={<LinkButton href={`/davomat?guruh=${g.id}`}><CalendarCheck className="h-4 w-4" /> Bugungi davomat</LinkButton>} />
+        actions={<LinkButton href={`/davomat?guruh=${g.id}`}><CalendarCheck className="h-4 w-4" />{" "}{t("Bugungi davomat")}</LinkButton>} />
       <Card>
-        <CardHeader title="Tarbiyachilar" />
+        <CardHeader title={t("Tarbiyachilar")} />
         <ul className="divide-y divide-slate-100">
-          {((g.group_teachers ?? []) as unknown as T[]).length === 0 && <li className="px-5 py-4 text-sm text-slate-500">Tarbiyachi biriktirilmagan</li>}
+          {((g.group_teachers ?? []) as unknown as T[]).length === 0 && <li className="px-5 py-4 text-sm text-slate-500">{t("Tarbiyachi biriktirilmagan")}</li>}
           {((g.group_teachers ?? []) as unknown as T[]).map((t) => t.employees && (
             <li key={t.employees.id} className="flex items-center justify-between px-5 py-3 text-sm">
               <span className="font-medium text-slate-900">{t.employees.full_name} <span className="font-normal text-slate-500">· {t.employees.position}</span></span>
@@ -46,17 +51,17 @@ export default async function GroupPage({ params }: { params: Promise<{ id: stri
         </ul>
       </Card>
       <Card>
-        <CardHeader title="Bolalar" description={`${kids?.length ?? 0}${g.capacity ? ` / ${g.capacity}` : ""} ta faol bola`} />
-        {(kids ?? []).length === 0 ? <EmptyState title="Guruhda bolalar yo'q" /> : (
+        <CardHeader title={t("Bolalar")} description={t("{0}{1} ta faol bola", [kids?.length ?? 0, g.capacity ? ` / ${g.capacity}` : ""])} />
+        {(kids ?? []).length === 0 ? <EmptyState title={t("Guruhda bolalar yo'q")} /> : (
           <Table>
-            <THead><tr><TH>Bola</TH><TH>Yoshi</TH><TH>Qabul qilingan</TH><TH>Bugun</TH></tr></THead>
+            <THead><tr><TH>{t("Bola")}</TH><TH>{t("Yoshi")}</TH><TH>{t("Qabul qilingan")}</TH><TH>{t("Bugun")}</TH></tr></THead>
             <tbody>
               {(kids ?? []).map((k) => (
                 <TR key={k.id}>
                   <TD><Link href={`/bolalar/${k.id}`} className="font-medium text-slate-900 hover:text-brand-700">{k.full_name}</Link></TD>
-                  <TD>{ageFromBirth(k.birth_date)}</TD>
+                  <TD>{f.ageFromBirth(k.birth_date)}</TD>
                   <TD>{formatDate(k.enrollment_date)}</TD>
-                  <TD>{attMap.has(k.id) ? <StatusBadge map={ATTENDANCE_STATUS} value={attMap.get(k.id)} /> : <Badge>Belgilanmagan</Badge>}</TD>
+                  <TD>{attMap.has(k.id) ? <StatusBadge map={ATTENDANCE_STATUS} value={attMap.get(k.id)} /> : <Badge>{t("Belgilanmagan")}</Badge>}</TD>
                 </TR>
               ))}
             </tbody>

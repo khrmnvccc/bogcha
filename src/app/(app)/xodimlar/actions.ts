@@ -7,6 +7,7 @@ import { createAccount, resetAccountPassword, setAccountActive } from "@/lib/acc
 import { zText, zPhone, zDate, zOptDate, zOptTime, zOptText, zUsername, zCheckbox, zUuid } from "@/lib/validation";
 import { ADMIN_ROLES } from "@/lib/auth";
 import type { Role } from "@/lib/labels";
+import { tr } from "@/lib/i18n/server";
 
 const employeeSchema = z.object({
   full_name: zText("F.I.Sh.", 3, 150),
@@ -69,7 +70,7 @@ export async function createEmployee(_p: ActionState, fd: FormData): Promise<Act
     });
     if (!res.ok) {
       revalidatePath("/xodimlar");
-      return { ok: false, message: `Xodim qo'shildi, lekin hisob yaratilmadi: ${res.message}` };
+      return { ok: false, message: await tr("Xodim qo'shildi, lekin hisob yaratilmadi: {0}", [res.message]) };
     }
     await supabase.from("employees").update({ profile_id: res.account.userId }).eq("id", emp.id);
     creds = { username: res.account.username, tempPassword: res.account.tempPassword, fullName: parsed.data.full_name };

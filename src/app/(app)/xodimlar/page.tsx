@@ -13,8 +13,12 @@ import { Table, THead, TH, TR, TD } from "@/components/ui/table";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { CreateEmployee } from "./create-employee";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Xodimlar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Xodimlar") };
+}
 
 type Row = EmployeeLite & {
   phone: string | null; start_date: string;
@@ -23,6 +27,7 @@ type Row = EmployeeLite & {
 };
 
 export default async function EmployeesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getI18n();
   const user = await requireUser(ADMIN_ROLES);
   const params = await searchParams;
   const supabase = await createClient();
@@ -53,16 +58,16 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
   return (
     <div>
       <PageHeader
-        title="Xodimlar"
-        description="Xodimlar ro'yxati, lavozimlari va tizimga kirish hisoblari"
+        title={t("Xodimlar")}
+        description={t("Xodimlar ro'yxati, lavozimlari va tizimga kirish hisoblari")}
         actions={<CreateEmployee groups={groups ?? []} canLeadership={user.profile.role === "director"}
           defaults={{ start: settings.work_start.slice(0, 5), end: settings.work_end.slice(0, 5), days: settings.work_days }} />}
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Faol xodimlar" value={allActive?.length ?? 0} icon={<Users className="h-5 w-5" />} />
-        <StatCard label="Bugun kutilmoqda" value={expected.length} icon={<Clock className="h-5 w-5" />} tone="violet" />
-        <StatCard label="Hozir ishda" value={atWork} icon={<UserCheck className="h-5 w-5" />} tone="green" href="/ishga-kelish" />
-        <StatCard label="Bugun kelmagan" value={absent} icon={<UserX className="h-5 w-5" />} tone="red" href="/ishga-kelish?holat=kelmagan" />
+        <StatCard label={t("Faol xodimlar")} value={allActive?.length ?? 0} icon={<Users className="h-5 w-5" />} />
+        <StatCard label={t("Bugun kutilmoqda")} value={expected.length} icon={<Clock className="h-5 w-5" />} tone="violet" />
+        <StatCard label={t("Hozir ishda")} value={atWork} icon={<UserCheck className="h-5 w-5" />} tone="green" href="/ishga-kelish" />
+        <StatCard label={t("Bugun kelmagan")} value={absent} icon={<UserX className="h-5 w-5" />} tone="red" href="/ishga-kelish?holat=kelmagan" />
       </div>
       <Card>
         <div className="border-b border-slate-100 p-4">
@@ -72,11 +77,11 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
           ]} />
         </div>
         {rows.length === 0 ? (
-          <EmptyState title="Xodimlar topilmadi" description={q || status ? "Filtrlarni o'zgartirib ko'ring" : "Birinchi xodimni qo'shing"} />
+          <EmptyState title={t("Xodimlar topilmadi")} description={q || status ? t("Filtrlarni o'zgartirib ko'ring") : t("Birinchi xodimni qo'shing")} />
         ) : (
           <Table>
             <THead>
-              <tr><TH>Xodim</TH><TH>Telefon</TH><TH>Guruhlar</TH><TH>Ish boshlagan</TH><TH>Bugun</TH><TH>Hisob</TH><TH>Holat</TH></tr>
+              <tr><TH>{t("Xodim")}</TH><TH>{t("Telefon")}</TH><TH>{t("Guruhlar")}</TH><TH>{t("Ish boshlagan")}</TH><TH>{t("Bugun")}</TH><TH>{t("Hisob")}</TH><TH>{t("Holat")}</TH></tr>
             </THead>
             <tbody>
               {rows.map((e) => {
@@ -93,15 +98,15 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                     <TD className="whitespace-nowrap">
                       {a ? (
                         <span className="text-sm">
-                          {formatTime(a.check_in_at)} – {a.check_out_at ? formatTime(a.check_out_at) : <Badge tone="green">ishda</Badge>}
-                          {a.late_minutes > 0 && <Badge tone="amber" className="ml-1">kechikdi</Badge>}
+                          {formatTime(a.check_in_at)} – {a.check_out_at ? formatTime(a.check_out_at) : <Badge tone="green">{t("ishda")}</Badge>}
+                          {a.late_minutes > 0 && <Badge tone="amber" className="ml-1">{t("kechikdi")}</Badge>}
                         </span>
-                      ) : isExpectedOn(e, settings, today) ? <Badge tone="red">kelmagan</Badge> : <span className="text-slate-400">dam olish</span>}
+                      ) : isExpectedOn(e, settings, today) ? <Badge tone="red">{t("kelmagan")}</Badge> : <span className="text-slate-400">{t("dam olish")}</span>}
                     </TD>
                     <TD>
                       {e.profiles ? (
-                        <span className="font-mono text-xs">{e.profiles.username}{!e.profiles.is_active && <Badge className="ml-1">bloklangan</Badge>}</span>
-                      ) : <span className="text-xs text-slate-400">yo&apos;q</span>}
+                        <span className="font-mono text-xs">{e.profiles.username}{!e.profiles.is_active && <Badge className="ml-1">{t("bloklangan")}</Badge>}</span>
+                      ) : <span className="text-xs text-slate-400">{t("yo'q")}</span>}
                     </TD>
                     <TD><StatusBadge map={EMPLOYMENT_STATUS} value={e.status} /></TD>
                   </TR>

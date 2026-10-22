@@ -7,10 +7,15 @@ import { PageHeader, EmptyState, Notice } from "@/components/ui/misc";
 import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { AttendanceSheet } from "./sheet";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Bolalar davomati" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Bolalar davomati") };
+}
 
 export default async function DailyAttendancePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t, f } = await getI18n();
   const user = await requireUser(["director", "admin", "teacher"]);
   const params = await searchParams;
   const supabase = await createClient();
@@ -42,22 +47,22 @@ export default async function DailyAttendancePage({ searchParams }: { searchPara
 
   return (
     <div>
-      <PageHeader title="Bolalar davomati" description={`${weekdayName(date)}, ${formatDateLong(date)}`} />
+      <PageHeader title={t("Bolalar davomati")} description={`${f.weekdayName(date)}, ${f.formatDateLong(date)}`} />
       <Card>
         <div className="border-b border-slate-100 p-4">
           <FilterBar filters={[
             { type: "date", name: "sana", label: "Sana", default: date },
             ...(groups && groups.length > 1 ? [{ type: "select" as const, name: "guruh", label: "Guruh", options: groups.map((g) => ({ value: g.id, label: g.name })) }] : []),
           ]} />
-          {groups && groups.length === 1 && <p className="mt-2 text-sm font-medium text-slate-700">Guruh: {groups[0].name}</p>}
+          {groups && groups.length === 1 && <p className="mt-2 text-sm font-medium text-slate-700">{t("Guruh:")}{" "}{groups[0].name}</p>}
         </div>
         {!groupId ? (
-          <EmptyState title="Guruh tanlanmagan" description={isTeacher ? "Sizga hali guruh biriktirilmagan" : "Avval guruh yarating"} />
+          <EmptyState title={t("Guruh tanlanmagan")} description={isTeacher ? t("Sizga hali guruh biriktirilmagan") : t("Avval guruh yarating")} />
         ) : children.length === 0 ? (
-          <EmptyState title="Guruhda faol bolalar yo'q" />
+          <EmptyState title={t("Guruhda faol bolalar yo'q")} />
         ) : (
           <>
-            {isPast && editable && <Notice tone="amber" className="m-4">Siz o&apos;tgan kun davomatini o&apos;zgartiryapsiz. Har bir o&apos;zgarish sabab bilan audit jurnaliga yoziladi.</Notice>}
+            {isPast && editable && <Notice tone="amber" className="m-4">{t("Siz o'tgan kun davomatini o'zgartiryapsiz. Har bir o'zgarish sabab bilan audit jurnaliga yoziladi.")}</Notice>}
             <AttendanceSheet key={`${groupId}-${date}`} date={date} kids={children} editable={editable} needsReason={isPast}
               lockedReason={!editable ? "O'tgan kunlar davomatini faqat administrator yoki ruxsat berilgan xodim tuzata oladi." : undefined} />
           </>

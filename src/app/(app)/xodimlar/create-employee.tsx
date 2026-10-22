@@ -8,18 +8,20 @@ import { Button } from "@/components/ui/button";
 import { CredentialsDialog, type Credentials } from "@/components/credentials";
 import { EmployeeFields, AccountFields, GroupChecklist } from "./employee-form";
 import { createEmployee } from "./actions";
+import { useI18n } from "@/lib/i18n/client";
 
 export function CreateEmployee({ groups, defaults, canLeadership }: {
   groups: { id: string; name: string }[]; defaults: { start: string; end: string; days: number[] }; canLeadership: boolean;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = React.useState(false);
   const [withAccount, setWithAccount] = React.useState(true);
   const [creds, setCreds] = React.useState<Credentials | null>(null);
   const router = useRouter();
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen} wide title="Yangi xodim" description="Xodim ma'lumotlari va (ixtiyoriy) tizimga kirish hisobi"
-        trigger={<Button><UserPlus className="h-4 w-4" /> Yangi xodim</Button>}>
+      <Dialog open={open} onOpenChange={setOpen} wide title={t("Yangi xodim")} description={t("Xodim ma'lumotlari va (ixtiyoriy) tizimga kirish hisobi")}
+        trigger={<Button><UserPlus className="h-4 w-4" />{" "}{t("Yangi xodim")}</Button>}>
         <ActionForm action={createEmployee} className="space-y-6" onSuccess={(s) => {
           setOpen(false);
           const c = s.data?.creds as Credentials | undefined;
@@ -28,19 +30,17 @@ export function CreateEmployee({ groups, defaults, canLeadership }: {
         }}>
           <EmployeeFields defaults={defaults} />
           <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-800">Biriktirilgan guruhlar</p>
+            <p className="text-sm font-medium text-slate-800">{t("Biriktirilgan guruhlar")}</p>
             <GroupChecklist groups={groups} />
           </div>
           <div className="space-y-3 rounded-xl border border-slate-200 p-4">
             <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
-              <input type="checkbox" name="create_account" checked={withAccount} onChange={(e) => setWithAccount(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-brand-600" />
-              Tizimga kirish hisobini hozir yaratish
-            </label>
+              <input type="checkbox" name="create_account" checked={withAccount} onChange={(e) => setWithAccount(e.target.checked)} className="h-4 w-4 rounded border-slate-300 text-brand-600" />{t("Tizimga kirish hisobini hozir yaratish")}</label>
             {withAccount && <AccountFields canLeadership={canLeadership} />}
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={() => setOpen(false)}>Bekor qilish</Button>
-            <SubmitButton>Saqlash</SubmitButton>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t("Bekor qilish")}</Button>
+            <SubmitButton>{t("Saqlash")}</SubmitButton>
           </div>
         </ActionForm>
       </Dialog>

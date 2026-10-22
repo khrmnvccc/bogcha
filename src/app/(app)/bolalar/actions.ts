@@ -7,6 +7,7 @@ import { createAccount } from "@/lib/accounts";
 import { ADMIN_ROLES, STAFF_ROLES } from "@/lib/auth";
 import { zText, zDate, zOptDate, zOptMoney, zOptUuid, zPhone, zOptPhone, zOptText, zUsername, zUuid } from "@/lib/validation";
 import { todayISO } from "@/lib/format";
+import { tr } from "@/lib/i18n/server";
 
 const childSchema = z.object({
   full_name: zText("F.I.Sh.", 3, 150),
@@ -67,7 +68,7 @@ export async function createChild(_p: ActionState, fd: FormData): Promise<Action
 
   if (newGuardian) {
     const { data: g, error: gErr } = await supabase.from("guardians").insert(guardianRow(newGuardian)).select("id").single();
-    if (gErr) return { ok: false, message: `Bola qo'shildi, lekin ota-ona saqlanmadi: ${dbErrorMessage(gErr)}`, data: { id: c.id } };
+    if (gErr) return { ok: false, message: await tr("Bola qo'shildi, lekin ota-ona saqlanmadi: {0}", [dbErrorMessage(gErr)]), data: { id: c.id } };
     guardianId = g.id;
   }
   if (guardianId) {
@@ -80,7 +81,7 @@ export async function createChild(_p: ActionState, fd: FormData): Promise<Action
     const res = await createAccount({ username, fullName: newGuardian.g_full_name, role: "parent", phone: newGuardian.g_phone, createdBy: user.id });
     if (!res.ok) {
       revalidatePath("/bolalar");
-      return { ok: true, message: `Bola qo'shildi. Ota-ona hisobi yaratilmadi: ${res.message}`, data: { id: c.id } };
+      return { ok: true, message: await tr("Bola qo'shildi. Ota-ona hisobi yaratilmadi: {0}", [res.message]), data: { id: c.id } };
     }
     await supabase.from("guardians").update({ profile_id: res.account.userId }).eq("id", guardianId);
     creds = { username, tempPassword: res.account.tempPassword, fullName: newGuardian.g_full_name };

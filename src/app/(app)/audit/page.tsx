@@ -9,8 +9,12 @@ import { PageHeader, EmptyState, Pagination } from "@/components/ui/misc";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/ui/filter-bar";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Audit jurnali" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("Audit jurnali") };
+}
 const PAGE = 50;
 const HIDDEN = new Set(["id", "created_at", "updated_at", "recorded_at"]);
 
@@ -44,6 +48,7 @@ function Changes({ log }: { log: Log }) {
 }
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getI18n();
   await requireUser(ADMIN_ROLES);
   const params = await searchParams;
   const from = sp(params.dan) ?? addDaysISO(todayISO(), -7);
@@ -64,7 +69,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
 
   return (
     <div>
-      <PageHeader title="Audit jurnali" description="Muhim o'zgarishlar: kim, qachon, nima va nima sababdan o'zgartirgan. Jurnalni tahrirlab yoki o'chirib bo'lmaydi." />
+      <PageHeader title={t("Audit jurnali")} description={t("Muhim o'zgarishlar: kim, qachon, nima va nima sababdan o'zgartirgan. Jurnalni tahrirlab yoki o'chirib bo'lmaydi.")} />
       <Card>
         <div className="border-b border-slate-100 p-4">
           <FilterBar filters={[
@@ -74,18 +79,18 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
             { type: "select", name: "amal", label: "Amal", options: Object.entries(AUDIT_ACTION).map(([value, label]) => ({ value, label })) },
           ]} />
         </div>
-        {logs.length === 0 ? <EmptyState title="Bu davrda yozuvlar yo'q" /> : (
+        {logs.length === 0 ? <EmptyState title={t("Bu davrda yozuvlar yo'q")} /> : (
           <>
             <ul className="divide-y divide-slate-100">
               {logs.map((l) => (
                 <li key={l.id} className="px-5 py-4">
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <Badge tone={l.action === "delete" ? "red" : l.action === "insert" ? "green" : "blue"}>{AUDIT_ACTION[l.action] ?? l.action}</Badge>
-                    <span className="font-medium text-slate-900">{AUDIT_ENTITY[l.entity] ?? l.entity}</span>
-                    <span className="text-slate-500">· {l.actor ? `${l.actor.full_name} (${l.actor.username})` : "Tizim"}</span>
+                    <Badge tone={l.action === "delete" ? "red" : l.action === "insert" ? "green" : "blue"}>{t(AUDIT_ACTION[l.action] ?? l.action)}</Badge>
+                    <span className="font-medium text-slate-900">{t(AUDIT_ENTITY[l.entity] ?? l.entity)}</span>
+                    <span className="text-slate-500">· {l.actor ? `${l.actor.full_name} (${l.actor.username})` : t("Tizim")}</span>
                     <span className="ml-auto text-xs text-slate-400">{formatDateTime(l.created_at)}</span>
                   </div>
-                  {l.reason && <p className="mt-1 text-sm text-amber-800">Sabab: {l.reason}</p>}
+                  {l.reason && <p className="mt-1 text-sm text-amber-800">{t("Sabab:")}{" "}{l.reason}</p>}
                   <Changes log={l} />
                 </li>
               ))}

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { authorize, isUser, dbErrorMessage, fieldErrors, type ActionState } from "@/lib/actions";
 import { ADMIN_ROLES } from "@/lib/auth";
 import { zText, zOptText, zOptMoney, zOptUuid, zUuid } from "@/lib/validation";
+import { tr } from "@/lib/i18n/server";
 
 const groupSchema = z.object({
   name: zText("Guruh nomi", 1, 80),
@@ -51,7 +52,7 @@ export async function setGroupActive(_p: ActionState, fd: FormData): Promise<Act
   const supabase = await createClient();
   if (!active) {
     const { count } = await supabase.from("children").select("id", { count: "exact", head: true }).eq("group_id", id.data).eq("status", "active");
-    if ((count ?? 0) > 0) return { ok: false, message: `Guruhda ${count} ta faol bola bor. Avval ularni boshqa guruhga o'tkazing.` };
+    if ((count ?? 0) > 0) return { ok: false, message: await tr("Guruhda {0} ta faol bola bor. Avval ularni boshqa guruhga o'tkazing.", [count]) };
   }
   const { error } = await supabase.from("kg_groups").update({ is_active: active }).eq("id", id.data);
   if (error) return { ok: false, message: dbErrorMessage(error) };

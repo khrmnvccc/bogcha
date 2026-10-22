@@ -8,13 +8,18 @@ import { PageHeader, EmptyState } from "@/components/ui/misc";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Composer, DeleteAnnouncement } from "./composer";
+import { getI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "E'lonlar" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getI18n();
+  return { title: t("E'lonlar") };
+}
 
 type A = { id: string; title: string; body: string; audience: string; is_pinned: boolean; created_at: string; created_by: string | null;
   kg_groups: { name: string } | null; guardians: { full_name: string } | null; author: { full_name: string } | null };
 
 export default async function AnnouncementsPage() {
+  const { t } = await getI18n();
   const user = await requireUser();
   const isAdmin = ADMIN_ROLES.includes(user.profile.role);
   const canPublish = user.profile.role !== "parent" && hasPermission(user, "announcements.publish");
@@ -36,9 +41,9 @@ export default async function AnnouncementsPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title="E'lonlar" description="Bog'cha yangiliklari va muhim xabarlar"
+      <PageHeader title={t("E'lonlar")} description={t("Bog'cha yangiliklari va muhim xabarlar")}
         actions={canPublish && <Composer groups={groups ?? []} guardians={guardians ?? []} isAdmin={isAdmin} />} />
-      {items.length === 0 ? <Card><EmptyState title="Hozircha e'lonlar yo'q" icon={<Megaphone className="h-6 w-6" />} /></Card> : (
+      {items.length === 0 ? <Card><EmptyState title={t("Hozircha e'lonlar yo'q")} icon={<Megaphone className="h-6 w-6" />} /></Card> : (
         <div className="space-y-4">
           {items.map((a) => (
             <Card key={a.id} className={a.is_pinned ? "border-brand-200 ring-1 ring-brand-100" : undefined}>
@@ -53,7 +58,7 @@ export default async function AnnouncementsPage() {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    {isStaff && <Badge tone="blue">{a.audience === "group" ? `Guruh: ${a.kg_groups?.name ?? ""}` : a.audience === "guardian" ? `Ota-ona: ${a.guardians?.full_name ?? ""}` : AUDIENCE_LABELS[a.audience]}</Badge>}
+                    {isStaff && <Badge tone="blue">{a.audience === "group" ? t("Guruh: {0}", [a.kg_groups?.name ?? ""]) : a.audience === "guardian" ? t("Ota-ona: {0}", [a.guardians?.full_name ?? ""]) : t(AUDIENCE_LABELS[a.audience])}</Badge>}
                     {(isAdmin || a.created_by === user.id) && <DeleteAnnouncement id={a.id} />}
                   </div>
                 </div>

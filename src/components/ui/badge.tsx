@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/labels";
+import { T } from "@/lib/i18n/client";
 
 const tones: Record<Tone, string> = {
   green: "bg-mint-50 text-mint-700 ring-mint-600/20",
@@ -16,7 +17,7 @@ export function Badge({ tone = "gray", className, children, title }: {
 }) {
   return (
     <span title={title} className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset", tones[tone], className)}>
-      {children}
+      {typeof children === "string" ? <T>{children}</T> : children}
     </span>
   );
 }

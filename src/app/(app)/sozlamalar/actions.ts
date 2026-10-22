@@ -7,6 +7,7 @@ import { ADMIN_ROLES } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { registerTelegramWebhook, telegramBotUsername, telegramConfigured } from "@/lib/integrations/telegram";
 import { zText, zOptText, zOptPhone, zMoney, zTime, zDate, zUuid } from "@/lib/validation";
+import { tr } from "@/lib/i18n/server";
 
 const int = (label: string, min: number, max: number) =>
   z.coerce.number({ error: `${label} son bo'lsin` }).int(`${label} butun son bo'lsin`).min(min, `${label} kamida ${min}`).max(max, `${label} ko'pi bilan ${max}`);
@@ -83,8 +84,8 @@ export async function connectTelegramBot(): Promise<ActionState> {
   try {
     await registerTelegramWebhook(env.appUrl());
   } catch (e) {
-    return { ok: false, message: `Botni ulab bo'lmadi: ${(e as Error).message}` };
+    return { ok: false, message: await tr("Botni ulab bo'lmadi: {0}", [(e as Error).message]) };
   }
   const username = await telegramBotUsername();
-  return { ok: true, message: `Bot ulandi${username ? ` (@${username})` : ""}. Foydalanuvchilar endi Profil sahifasidan Telegram'ni ulay oladi.` };
+  return { ok: true, message: await tr("Bot ulandi{0}. Foydalanuvchilar endi Profil sahifasidan Telegram'ni ulay oladi.", [username ? ` (@${username})` : ""]) };
 }
