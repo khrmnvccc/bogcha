@@ -15,6 +15,7 @@ import { AccountActions } from "@/components/account-actions";
 import { EditEmployee, EmployeeGroupsForm, CreateAccountForm } from "./client";
 import { resetPassword, setUserActive } from "../actions";
 import { getI18n } from "@/lib/i18n/server";
+import { PhotoUpload } from "@/components/photo-upload";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -48,6 +49,7 @@ export default async function EmployeePage({ params }: { params: Promise<{ id: s
   return (
     <div>
       <PageHeader title={e.full_name} description={e.position} back={{ href: "/xodimlar", label: "Xodimlar" }}
+        leading={<PhotoUpload kind="employee" id={e.id} name={e.full_name} version={e.photo_updated_at} editable />}
         actions={<LinkButton variant="outline" href={`/ishga-kelish?xodim=${e.id}&dan=${month}`}>{t("Davomat tarixi")}</LinkButton>} />
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

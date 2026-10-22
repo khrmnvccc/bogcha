@@ -9,6 +9,8 @@ import { ContactForm } from "./contact-form";
 import { TelegramConnect } from "./telegram-card";
 import { telegramConfigured } from "@/lib/integrations/telegram";
 import { getI18n } from "@/lib/i18n/server";
+import { PhotoUpload } from "@/components/photo-upload";
+import { InstallCard } from "@/components/pwa";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -22,10 +24,14 @@ export default async function ProfilePage() {
   const { data: g } = user.guardianId
     ? await supabase.from("guardians").select("phone, phone2, address, workplace").eq("id", user.guardianId).single()
     : { data: null };
+  const { data: emp } = user.employeeId
+    ? await supabase.from("employees").select("photo_updated_at").eq("id", user.employeeId).single()
+    : { data: null };
   const isParent = user.profile.role === "parent";
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <PageHeader title={t("Profil")} />
+      <PageHeader title={t("Profil")} description={user.profile.full_name}
+        leading={user.employeeId ? <PhotoUpload kind="employee" id={user.employeeId} name={user.profile.full_name} version={emp?.photo_updated_at} editable /> : undefined} />
       <Card>
         <CardHeader title={t("Hisob")} />
         <CardBody>
@@ -40,6 +46,10 @@ export default async function ProfilePage() {
       <Card>
         <CardHeader title={t("Aloqa ma'lumotlari")} description={isParent ? t("Bog'cha siz bilan shu raqamlar orqali bog'lanadi") : undefined} />
         <CardBody><ContactForm isParent={isParent} v={g ?? { phone: user.profile.phone }} /></CardBody>
+      </Card>
+      <Card id="ilova">
+        <CardHeader title={t("Ilova (telefon va kompyuter)")} />
+        <CardBody><InstallCard /></CardBody>
       </Card>
       <Card id="telegram">
         <CardHeader title={t("Telegram xabarnomalari")} />

@@ -14,6 +14,7 @@ import { Badge, StatusBadge } from "@/components/ui/badge";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { CreateEmployee } from "./create-employee";
 import { getI18n } from "@/lib/i18n/server";
+import { Avatar } from "@/components/avatar";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -21,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 type Row = EmployeeLite & {
-  phone: string | null; start_date: string;
+  phone: string | null; start_date: string; photo_updated_at: string | null;
   group_teachers: { kg_groups: { name: string } | null }[];
   profiles: { username: string | null; is_active: boolean } | null;
 };
@@ -37,7 +38,7 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
 
   let query = supabase
     .from("employees")
-    .select("id, full_name, phone, position, status, start_date, schedule_start, schedule_end, work_days, profile_id, group_teachers(kg_groups(name)), profiles(username, is_active)")
+    .select("id, full_name, phone, position, status, start_date, photo_updated_at, schedule_start, schedule_end, work_days, profile_id, group_teachers(kg_groups(name)), profiles(username, is_active)")
     .order("full_name");
   if (q) query = query.or(`full_name.ilike.%${q}%,phone.ilike.%${q}%,position.ilike.%${q}%`);
   if (status) query = query.eq("status", status);
@@ -89,8 +90,13 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
                 return (
                   <TR key={e.id}>
                     <TD>
-                      <Link href={`/xodimlar/${e.id}`} className="font-medium text-slate-900 hover:text-brand-700">{e.full_name}</Link>
-                      <p className="text-xs text-slate-500">{e.position}</p>
+                      <div className="flex items-center gap-3">
+                        <Avatar kind="employee" id={e.id} name={e.full_name} version={e.photo_updated_at} />
+                        <div className="min-w-0">
+                          <Link href={`/xodimlar/${e.id}`} className="font-medium text-slate-900 hover:text-brand-700">{e.full_name}</Link>
+                          <p className="text-xs text-slate-500">{e.position}</p>
+                        </div>
+                      </div>
                     </TD>
                     <TD className="whitespace-nowrap">{e.phone ?? "—"}</TD>
                     <TD>{e.group_teachers.map((g) => g.kg_groups?.name).filter(Boolean).join(", ") || "—"}</TD>

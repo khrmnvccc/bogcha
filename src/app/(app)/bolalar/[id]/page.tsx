@@ -16,6 +16,7 @@ import { AccountActions } from "@/components/account-actions";
 import { resetPassword, setUserActive } from "../../xodimlar/actions";
 import { EditChild, AddGuardian, EditGuardian, UnlinkGuardian, ParentAccountButton, AddPickup, RemovePickup, AddNote, DeleteNote } from "./client";
 import { getI18n } from "@/lib/i18n/server";
+import { PhotoUpload } from "@/components/photo-upload";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -63,6 +64,7 @@ export default async function ChildPage({ params }: { params: Promise<{ id: stri
   return (
     <div className="space-y-6">
       <PageHeader title={c.full_name} description={`${f.ageFromBirth(c.birth_date)} · ${group?.name ?? "Guruhsiz"}`} back={{ href: "/bolalar", label: "Bolalar" }}
+        leading={<PhotoUpload kind="child" id={c.id} name={c.full_name} version={c.photo_updated_at} editable={isAdmin || user.profile.role === "teacher"} />}
         actions={<>
           {finance && <LinkButton variant="outline" href={`/tolovlar?bola=${c.id}`}><Wallet className="h-4 w-4" />{" "}{t("To'lovlar")}</LinkButton>}
           {isAdmin && <EditChild groups={groups ?? []} child={c} />}

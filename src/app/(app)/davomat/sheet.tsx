@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCheck, MessageSquarePlus, Save, Loader2, Lock } from "lucide-react";
+import { BellRing, CheckCheck, MessageSquarePlus, Save, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { Notice } from "@/components/ui/misc";
@@ -10,9 +10,10 @@ import { ATTENDANCE_STATUS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { saveChildAttendance } from "./actions";
 import { useI18n } from "@/lib/i18n/client";
+import { Avatar } from "@/components/avatar";
 
 type Status = "present" | "absent" | "late" | "excused";
-type Child = { id: string; full_name: string; status?: Status; note?: string | null; recorded_by?: string | null; updated_at?: string | null };
+type Child = { id: string; full_name: string; status?: Status; note?: string | null; photo?: string | null; parentNote?: string | null };
 
 const STYLES: Record<Status, string> = {
   present: "data-[on=true]:bg-mint-600 data-[on=true]:text-white data-[on=true]:border-mint-600",
@@ -88,7 +89,15 @@ export function AttendanceSheet({ date, kids: children, editable, needsReason, l
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="w-6 shrink-0 text-right text-xs text-slate-400">{idx + 1}</span>
-                  <span className="truncate font-medium text-slate-900">{c.full_name}</span>
+                  <Avatar kind="child" id={c.id} name={c.full_name} version={c.photo} />
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-slate-900">{c.full_name}</span>
+                    {c.parentNote != null && (
+                      <span className="mt-0.5 inline-flex max-w-full items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+                        <BellRing className="h-3 w-3 shrink-0" /><span className="truncate">{t("Ota-ona: kelmaydi")}{c.parentNote ? ` · ${c.parentNote}` : ""}</span>
+                      </span>
+                    )}
+                  </span>
                   {dirty && <span className="h-2 w-2 shrink-0 rounded-full bg-brand-500" title={t("Saqlanmagan")} />}
                 </div>
                 <div className="grid grid-cols-4 gap-1.5 md:flex">

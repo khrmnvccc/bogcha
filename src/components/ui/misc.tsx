@@ -9,8 +9,8 @@ function tx(v: React.ReactNode) {
   return typeof v === "string" ? <T>{v}</T> : v;
 }
 
-export function PageHeader({ title, description, actions, back }: {
-  title: string; description?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string };
+export function PageHeader({ title, description, actions, back, leading }: {
+  title: string; description?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; leading?: React.ReactNode;
 }) {
   return (
     <div className="mb-5 sm:mb-6">
@@ -20,9 +20,12 @@ export function PageHeader({ title, description, actions, back }: {
         </Link>
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{tx(title)}</h1>
-          {description && <p className="mt-1 text-sm text-slate-500">{tx(description)}</p>}
+        <div className="flex min-w-0 items-center gap-4">
+          {leading}
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{tx(title)}</h1>
+            {description && <p className="mt-1 text-sm text-slate-500">{tx(description)}</p>}
+          </div>
         </div>
         {actions && <div className="page-actions flex flex-wrap items-center gap-2">{actions}</div>}
       </div>

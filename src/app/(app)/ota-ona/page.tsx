@@ -11,6 +11,8 @@ import { PageHeader, EmptyState, Notice } from "@/components/ui/misc";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Badge, StatusBadge } from "@/components/ui/badge";
 import { getI18n } from "@/lib/i18n/server";
+import { Avatar } from "@/components/avatar";
+import { AbsenceCard, type AbsenceReport } from "./absence";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -27,11 +29,12 @@ export default async function ParentHome() {
   const month = currentMonthISO();
   const none = ["00000000-0000-0000-0000-000000000000"];
 
-  const [{ data: att }, { data: invoices }, { data: news }, { data: s }] = await Promise.all([
+  const [{ data: att }, { data: invoices }, { data: news }, { data: s }, { data: reports }] = await Promise.all([
     supabase.from("child_attendance").select("child_id, date, status").in("child_id", ids.length ? ids : none).gte("date", month).lt("date", addMonthsISO(month, 1)),
     supabase.from("invoices").select("child_id, period, amount_due, paid_total, balance, status, due_date").in("child_id", ids.length ? ids : none).lte("period", month),
     supabase.from("announcements").select("id, title, body, created_at").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(3),
     supabase.from("settings").select("kindergarten_name, phone").eq("id", 1).single(),
+    supabase.from("absence_reports").select("id, child_id, date, note").in("child_id", ids.length ? ids : none).gte("date", today).order("date"),
   ]);
 
   return (
@@ -49,9 +52,13 @@ export default async function ParentHome() {
             const debt = (invoices ?? []).filter((i) => i.child_id === k.id).reduce((s, i) => s + Math.max(0, Number(i.balance)), 0);
             return (
               <Card key={k.id} className="overflow-hidden">
-                <div className="bg-gradient-to-r from-brand-50 to-mint-50 px-5 py-4">
-                  <p className="text-lg font-semibold text-slate-900">{k.full_name}</p>
-                  <p className="text-sm text-slate-600">{k.kg_groups?.name ?? t("Guruhsiz")} · {f.ageFromBirth(k.birth_date)}</p>
+                <div className="flex items-center gap-4 bg-gradient-to-r from-brand-50 to-mint-50 px-5 py-4">
+                  <Avatar kind="child" id={k.id} name={k.full_name} version={k.photo_updated_at} size="lg" />
+                  <div className="min-w-0">
+                    <p className="text-lg font-semibold text-slate-900">{k.full_name}</p>
+                    <p className="text-sm text-slate-600">{k.kg_groups?.name ?? t("Guruhsiz")} · {f.ageFromBirth(k.birth_date)}</p>
+                    {k.birth_date.slice(5) === today.slice(5) && <p className="mt-1 text-sm font-medium text-pink-600">🎂 {t("Bugun tug'ilgan kuni! Tabriklaymiz!")}</p>}
+                  </div>
                 </div>
                 <CardBody className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -79,6 +86,8 @@ export default async function ParentHome() {
                   {debt > 0 && (!cur || debt > Number(cur.balance)) && (
                     <Notice tone="amber">{t("Umumiy qarzdorlik (oldingi oylar bilan):")}{" "}<b>{f.formatSom(debt)}</b></Notice>
                   )}
+                  <AbsenceCard childId={k.id} childName={k.full_name} today={today}
+                    reports={((reports ?? []) as (AbsenceReport & { child_id: string })[]).filter((r) => r.child_id === k.id)} />
                   <div className="flex gap-4 text-sm">
                     <Link href={`/ota-ona/davomat?bola=${k.id}`} className="inline-flex items-center gap-1 font-medium text-brand-700">{t("Davomat")}{" "}<ChevronRight className="h-4 w-4" /></Link>
                     <Link href={`/ota-ona/tolovlar?bola=${k.id}`} className="inline-flex items-center gap-1 font-medium text-brand-700">{t("To'lovlar")}{" "}<ChevronRight className="h-4 w-4" /></Link>

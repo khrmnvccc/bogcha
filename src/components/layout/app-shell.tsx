@@ -12,6 +12,9 @@ import type { NavSection } from "@/lib/nav";
 import { cn, initials } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { CommandPalette } from "@/components/command-palette";
+import { InstallBanner } from "@/components/pwa";
+import { Avatar } from "@/components/avatar";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   home: Home, layout: LayoutDashboard, users: Users, clock: Clock, baby: Baby, layers: Layers,
@@ -21,7 +24,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 
 type ShellProps = {
   nav: NavSection[];
-  user: { name: string; roleLabel: string };
+  user: { name: string; roleLabel: string; employeeId: string | null; photo: string | null; staff: boolean };
   orgName: string;
   unread: number;
   signOut: () => Promise<void>;
@@ -158,6 +161,7 @@ export function AppShell({ nav, user, orgName, unread, signOut, children }: Shel
           </div>
           <div className="hidden flex-1 lg:block" />
 
+          <CommandPalette nav={nav} people={user.staff} />
           <LanguageSwitcher />
 
           <Link href="/bildirishnomalar" className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700" aria-label={t("Bildirishnomalar")}>
@@ -171,9 +175,11 @@ export function AppShell({ nav, user, orgName, unread, signOut, children }: Shel
 
           <M.Root>
             <M.Trigger className="flex items-center gap-2.5 rounded-lg p-1 pr-2 hover:bg-slate-100" aria-label={t("Foydalanuvchi menyusi")}>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
-                {initials(user.name) || "?"}
-              </span>
+              {user.employeeId
+                ? <Avatar kind="employee" id={user.employeeId} name={user.name} version={user.photo} className="h-8 w-8 ring-0" />
+                : <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+                  {initials(user.name) || "?"}
+                </span>}
               <span className="hidden text-left lg:block">
                 <span className="block max-w-40 truncate text-sm font-medium text-slate-800">{user.name}</span>
                 <span className="block text-xs text-slate-500">{user.roleLabel}</span>
@@ -203,7 +209,7 @@ export function AppShell({ nav, user, orgName, unread, signOut, children }: Shel
           </M.Root>
         </header>
 
-        <main className="has-bottom-nav mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="has-bottom-nav mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8"><InstallBanner />{children}</main>
       </div>
       <BottomNav nav={nav} onMenu={() => setOpen(true)} />
     </div>

@@ -12,6 +12,7 @@ import { LinkButton } from "@/components/ui/button";
 import { CheckWidget } from "@/components/check-widget";
 import { checkIn, checkOut } from "../ishga-kelish/actions";
 import { getI18n } from "@/lib/i18n/server";
+import { Avatar } from "@/components/avatar";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -28,16 +29,20 @@ export default async function MyDayPage() {
   const [{ data: emp }, { data: rec }, { data: groups }, { data: news }] = await Promise.all([
     user.employeeId ? supabase.from("employees").select("schedule_start, schedule_end").eq("id", user.employeeId).single() : Promise.resolve({ data: null }),
     user.employeeId ? supabase.from("employee_attendance").select("*").eq("employee_id", user.employeeId).eq("work_date", today).maybeSingle() : Promise.resolve({ data: null }),
-    user.employeeId ? supabase.from("group_teachers").select("kg_groups(id, name, room, children(id, full_name, birth_date, status))").eq("employee_id", user.employeeId) : Promise.resolve({ data: [] }),
+    user.employeeId ? supabase.from("group_teachers").select("kg_groups(id, name, room, children(id, full_name, birth_date, status, photo_updated_at))").eq("employee_id", user.employeeId) : Promise.resolve({ data: [] }),
     supabase.from("announcements").select("id, title, body, created_at").order("is_pinned", { ascending: false }).order("created_at", { ascending: false }).limit(3),
   ]);
 
-  type G = { id: string; name: string; room: string | null; children: { id: string; full_name: string; birth_date: string; status: string }[] };
+  type G = { id: string; name: string; room: string | null; children: { id: string; full_name: string; birth_date: string; status: string; photo_updated_at: string | null }[] };
   const myGroups = ((groups ?? []) as unknown as { kg_groups: G | null }[]).map((g) => g.kg_groups).filter(Boolean) as G[];
   const childIds = myGroups.flatMap((g) => g.children.filter((c) => c.status === "active").map((c) => c.id));
-  const { data: marked } = childIds.length
-    ? await supabase.from("child_attendance").select("child_id, status").eq("date", today).in("child_id", childIds)
-    : { data: [] };
+  const [{ data: marked }, { data: absences }] = childIds.length
+    ? await Promise.all([
+      supabase.from("child_attendance").select("child_id, status").eq("date", today).in("child_id", childIds),
+      supabase.from("absence_reports").select("child_id, note").eq("date", today).in("child_id", childIds),
+    ])
+    : [{ data: [] }, { data: [] }];
+  const allKids = new Map(myGroups.flatMap((g) => g.children).map((c) => [c.id, c]));
   const markedSet = new Map((marked ?? []).map((m) => [m.child_id as string, m.status as string]));
   const mmdd = today.slice(5);
   const birthdays = myGroups.flatMap((g) => g.children).filter((c) => c.status === "active" && c.birth_date.slice(5) === mmdd);
@@ -53,6 +58,23 @@ export default async function MyDayPage() {
           locationEnabled={settings.location_lat != null && settings.location_lng != null} />
       ) : (
         <Notice tone="amber">{t("Hisobingiz xodim kartasiga bog'lanmagan, shuning uchun ishga kelish-ketishni belgilay olmaysiz.")}</Notice>
+      )}
+
+      {(absences ?? []).length > 0 && (
+        <Notice tone="blue">
+          <p className="mb-2 font-medium">{t("Ota-onalar xabari: bugun kelmaydi")}</p>
+          <ul className="space-y-1.5">
+            {(absences ?? []).map((a) => {
+              const c = allKids.get(a.child_id as string);
+              return c && (
+                <li key={c.id} className="flex items-center gap-2 text-sm">
+                  <Avatar kind="child" id={c.id} name={c.full_name} version={c.photo_updated_at} size="xs" />
+                  <span className="font-medium">{c.full_name}</span>{a.note && <span className="text-slate-600">· {a.note}</span>}
+                </li>
+              );
+            })}
+          </ul>
+        </Notice>
       )}
 
       {birthdays.length > 0 && (
@@ -77,6 +99,10 @@ export default async function MyDayPage() {
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-slate-900">{g.name}{g.room && <span className="ml-2 text-xs text-slate-400">{g.room}</span>}</p>
                         <p className="text-sm text-slate-500">{active.length}{" "}{t("bola · bugun kelgan:")}{" "}{present}</p>
+                        <div className="mt-2 flex -space-x-2">
+                          {active.slice(0, 8).map((c) => <Avatar key={c.id} kind="child" id={c.id} name={c.full_name} version={c.photo_updated_at} size="xs" />)}
+                          {active.length > 8 && <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[10px] font-medium text-slate-500 ring-2 ring-white">+{active.length - 8}</span>}
+                        </div>
                         <div className="mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-slate-100">
                           <div className="h-full rounded-full bg-mint-500" style={{ width: `${pct}%` }} />
                         </div>

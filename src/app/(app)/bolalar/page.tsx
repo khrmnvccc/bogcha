@@ -14,6 +14,7 @@ import { Table, THead, TH, TR, TD } from "@/components/ui/table";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { LinkButton } from "@/components/ui/button";
 import { getI18n } from "@/lib/i18n/server";
+import { Avatar } from "@/components/avatar";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getI18n();
@@ -22,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const PAGE = 25;
 
 type Row = {
-  id: string; full_name: string; birth_date: string; enrollment_date: string; status: string; monthly_fee: number | null;
+  id: string; full_name: string; birth_date: string; enrollment_date: string; status: string; monthly_fee: number | null; photo_updated_at: string | null;
   kg_groups: { name: string; monthly_fee: number | null } | null;
   child_guardians: { relationship: string; is_primary: boolean; guardians: { full_name: string; phone: string } | null }[];
 };
@@ -40,7 +41,7 @@ export default async function ChildrenPage({ searchParams }: { searchParams: Pro
   const supabase = await createClient();
 
   let query = supabase.from("children")
-    .select("id, full_name, birth_date, enrollment_date, status, monthly_fee, kg_groups(name, monthly_fee), child_guardians(relationship, is_primary, guardians(full_name, phone))", { count: "exact" })
+    .select("id, full_name, birth_date, enrollment_date, status, monthly_fee, photo_updated_at, kg_groups(name, monthly_fee), child_guardians(relationship, is_primary, guardians(full_name, phone))", { count: "exact" })
     .order("full_name").range(...rangeOf(page, PAGE));
   if (q) query = query.ilike("full_name", `%${q}%`);
   if (group === "none") query = query.is("group_id", null);
@@ -85,8 +86,13 @@ export default async function ChildrenPage({ searchParams }: { searchParams: Pro
                   return (
                     <TR key={c.id}>
                       <TD>
-                        <Link href={`/bolalar/${c.id}`} className="font-medium text-slate-900 hover:text-brand-700">{c.full_name}</Link>
-                        <p className="text-xs text-slate-500">{f.ageFromBirth(c.birth_date)} · {formatDate(c.birth_date)}</p>
+                        <div className="flex items-center gap-3">
+                          <Avatar kind="child" id={c.id} name={c.full_name} version={c.photo_updated_at} />
+                          <div className="min-w-0">
+                            <Link href={`/bolalar/${c.id}`} className="font-medium text-slate-900 hover:text-brand-700">{c.full_name}</Link>
+                            <p className="text-xs text-slate-500">{f.ageFromBirth(c.birth_date)} · {formatDate(c.birth_date)}</p>
+                          </div>
+                        </div>
                       </TD>
                       <TD>{c.kg_groups?.name ?? <span className="text-slate-400">—</span>}</TD>
                       <TD>

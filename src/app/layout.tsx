@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { getI18n, getLocale } from "@/lib/i18n/server";
 import { I18nProvider } from "@/lib/i18n/client";
+import { PwaRegister } from "@/components/pwa";
 
 const inter = Inter({ subsets: ["latin", "latin-ext", "cyrillic"], variable: "--font-inter", display: "swap" });
 
@@ -13,6 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: t("Bog'cha boshqaruv tizimi"), template: t("%s · Bog'cha") },
     description: t("Bog'cha uchun xodimlar, bolalar, davomat va to'lovlarni boshqarish tizimi"),
     robots: { index: false, follow: false },
+    applicationName: t("Bog'cha"),
+    appleWebApp: { capable: true, title: t("Bog'cha"), statusBarStyle: "default" },
+    icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png" },
+    formatDetection: { telephone: false },
   };
 }
 
@@ -27,7 +32,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang={locale} className={inter.variable}>
       <body className="antialiased">
-        <I18nProvider locale={locale}>{children}</I18nProvider>
+        <I18nProvider locale={locale}>{children}<PwaRegister /></I18nProvider>
         <Toaster position="top-center" richColors closeButton toastOptions={{ duration: 4000 }} />
       </body>
     </html>
