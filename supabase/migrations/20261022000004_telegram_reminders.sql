@@ -12,6 +12,7 @@ create table public.telegram_link_codes (
   code text primary key,
   profile_id uuid not null references public.profiles (id) on delete cascade,
   expires_at timestamptz not null default now() + interval '15 minutes',
+  used_at timestamptz,
   created_at timestamptz not null default now()
 );
 create index telegram_link_codes_profile_idx on public.telegram_link_codes (profile_id);
@@ -41,7 +42,9 @@ begin
   if v_uid is null or (select private.current_app_role()) is null then
     raise exception 'Ruxsat yo''q' using errcode = '42501';
   end if;
-  delete from public.telegram_link_codes where profile_id = v_uid or expires_at < now();
+  -- Eski havolalar bekor qilinadi (yozuvlar o'chirilmaydi, faqat muddati tugaydi)
+  update public.telegram_link_codes set expires_at = now()
+   where profile_id = v_uid and used_at is null and expires_at > now();
   v_code := encode(extensions.gen_random_bytes(12), 'hex');
   insert into public.telegram_link_codes (code, profile_id) values (v_code, v_uid);
   return v_code;
@@ -61,7 +64,8 @@ begin
   if p_chat_id !~ '^-?[0-9]{1,20}$' then
     raise exception 'Noto''g''ri chat' using errcode = '22023';
   end if;
-  delete from public.telegram_link_codes where code = p_code and expires_at >= now()
+  update public.telegram_link_codes set used_at = now()
+   where code = p_code and used_at is null and expires_at >= now()
   returning profile_id into v_profile;
   if v_profile is null then
     return null;
@@ -361,8 +365,6 @@ begin
      end if;
     end if;
   end if;
-
-  delete from public.reminder_log where created_at < now() - interval '60 days';
 
   return jsonb_build_object('payment', n_pay, 'check_in', n_in, 'check_out', n_out, 'attendance', n_att, 'summary', n_sum);
 end;
