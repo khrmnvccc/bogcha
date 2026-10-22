@@ -41,7 +41,7 @@ A management system for a kindergarten in Uzbekistan. It covers staff, staff che
 
 ## 2. Database (migrations)
 
-`supabase/migrations/` holds three files. Apply them **in this order**:
+`supabase/migrations/` holds four files. Apply them **in this order**:
 
 1. `20261022000001_schema.sql`: enums and 20 tables. The main ones are `settings`, `profiles`, `employees`, `kg_groups`, `group_teachers`, `children`, `child_notes`, `guardians`, `child_guardians`, `pickup_contacts`, `employee_attendance`, `child_attendance`, `invoices`, `invoice_adjustments`, `payments`, `announcements`, `notifications`, `outbound_messages` and `audit_logs`.
 2. `20261022000002_functions.sql`:
@@ -53,6 +53,7 @@ A management system for a kindergarten in Uzbekistan. It covers staff, staff che
    - notification fan-out
    - all RPCs (`employee_check_in`, `save_child_attendance`, `generate_monthly_invoices`, `void_payment`, `add_invoice_adjustment`, …)
 3. `20261022000003_rls.sql`: all RLS policies and grants.
+4. `20261022000004_telegram_reminders.sql`: Telegram account linking (`profiles.telegram_chat_id`, one-time link codes, `link_telegram`), copying every in-app notification to Telegram, and `run_scheduled_reminders()` (payment due in 3 days / today / overdue weekly, staff check-in and check-out reminders, attendance reminder for teachers, a daily summary for the director).
 
 Key data rules:
 - `invoices.amount_due`, `balance` and `status` are generated columns, so totals can never drift.
@@ -105,7 +106,19 @@ supabase/tests/run.sh # RLS/SQL tests (needs a local PostgreSQL)
 
 1. Push the code to GitHub and import it in Vercel. The framework is detected automatically.
 2. In **Environment Variables**, add everything from `.env.example`. Set `NEXT_PUBLIC_APP_URL` to the real domain.
-3. `vercel.json` defines a cron job that runs `/api/integrations/dispatch` once a day at 09:00 Tashkent time (04:00 UTC), which sends queued Telegram/SMS messages. If you set `CRON_SECRET`, Vercel sends it automatically. On the Hobby plan, cron jobs run at most once a day. On Pro you can run it more often, for example `*/10 * * * *`.
+3. Set `CRON_SECRET` to a long random string. `/api/integrations/dispatch` (GET, `Authorization: Bearer <CRON_SECRET>`) creates due reminders and sends queued Telegram/SMS messages. `vercel.json` calls it once a day (the Hobby plan limit). For reminders on time, also call it every 5 minutes from Supabase with `pg_cron` + `pg_net`, keeping the secret in Vault:
+   ```sql
+   create extension if not exists pg_cron with schema pg_catalog;
+   create extension if not exists pg_net with schema extensions;
+   select vault.create_secret('<CRON_SECRET>', 'bogcha_cron_secret');
+   select cron.schedule('bogcha-dispatch', '*/5 * * * *', $$
+     select net.http_get(
+       url := 'https://<your-domain>/api/integrations/dispatch',
+       headers := jsonb_build_object('Authorization', 'Bearer ' ||
+         (select decrypted_secret from vault.decrypted_secrets where name = 'bogcha_cron_secret')),
+       timeout_milliseconds := 30000);
+   $$);
+   ```
 4. In Supabase, under **Authentication → URL Configuration**, set the Site URL to your domain.
 
 Any Node.js host works as well: `npm run build && npm start`.
@@ -118,7 +131,7 @@ These parts are built but **only work once configured**. Until then the app says
 
 | Feature | What's needed | Status |
 |---|---|---|
-| **Telegram notifications** | Create a bot with @BotFather and set `TELEGRAM_BOT_TOKEN`. Each parent needs a `telegram_chat_id` on their guardian record | Messages are queued in `outbound_messages`. Without a token they stay `pending`. Not tested against the live Telegram API |
+| **Telegram notifications** | Create a bot with @BotFather, set `TELEGRAM_BOT_TOKEN` (optionally `TELEGRAM_BOT_USERNAME`) and redeploy. Then an admin presses "Botni saytga ulash" in Sozlamalar (registers the webhook), and each user presses "Telegram'ni ulash" on their Profil page | Every in-app notification is also queued for the user's Telegram. Without a token nothing is sent and the app says so. Tested locally with a fake token, not yet against the live Telegram API |
 | **SMS (Eskiz.uz)** | `ESKIZ_EMAIL`, `ESKIZ_PASSWORD`, `ESKIZ_FROM` and an Eskiz contract | Code is ready but not tested against the live API |
 | **Biometric / Face ID terminal** | Set `BIOMETRIC_DEVICE_TOKEN`. The device sends `POST /api/integrations/biometric` with `Authorization: Bearer <token>` and `{"employee_id":"…","kind":"in"\|"out"}` | The endpoint works. It must be adapted to the specific device model |
 | **Location-based check-in** | Set the kindergarten's latitude, longitude and radius in Sozlamalar | Without them, check-ins are marked "self-reported". The browser location is a check, not proof |
